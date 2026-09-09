@@ -1,0 +1,28 @@
+{
+  "buildFiles": [
+    "F:\\Flutter_Versions\\flutter_windows_3.29.3-stable\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\vicky\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "E:\\2026_Flutter_projects\\Demandium\\Swwisho\\2025\\Swwisho_User_24-02-25\\android\\app\\.cxx\\RelWithDebInfo\\3b222t5c\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\vicky\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "E:\\2026_Flutter_projects\\Demandium\\Swwisho\\2025\\Swwisho_User_24-02-25\\android\\app\\.cxx\\RelWithDebInfo\\3b222t5c\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {},
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "C:\\Users\\vicky\\AppData\\Local\\Android\\Sdk\\ndk\\26.3.11579264\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe",
+      "cppCompilerExecutable": "C:\\Users\\vicky\\AppData\\Local\\Android\\Sdk\\ndk\\26.3.11579264\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": []
+}

@@ -1,0 +1,2 @@
+E:/2026_Flutter_projects/Demandium/Swwisho/2025/Swwisho_User_24-02-25/android/app/.cxx/RelWithDebInfo/3b222t5c/arm64-v8a/CMakeFiles/edit_cache.dir
+E:/2026_Flutter_projects/Demandium/Swwisho/2025/Swwisho_User_24-02-25/android/app/.cxx/RelWithDebInfo/3b222t5c/arm64-v8a/CMakeFiles/rebuild_cache.dir

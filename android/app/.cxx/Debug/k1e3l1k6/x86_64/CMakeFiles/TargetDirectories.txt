@@ -1,0 +1,2 @@
+D:/flutter_project_26/Demandium/Swwisho/Swwisho_User_24-02-25/android/app/.cxx/Debug/k1e3l1k6/x86_64/CMakeFiles/edit_cache.dir
+D:/flutter_project_26/Demandium/Swwisho/Swwisho_User_24-02-25/android/app/.cxx/Debug/k1e3l1k6/x86_64/CMakeFiles/rebuild_cache.dir
