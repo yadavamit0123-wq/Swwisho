@@ -3,6 +3,9 @@ class PredictionModel {
 
   PredictionModel({this.placePrediction});
 
+  String? get description => placePrediction?.text?.text;
+  String? get placeId => placePrediction?.placeId;
+
   PredictionModel.fromJson(Map<String, dynamic> json) {
     placePrediction = json['placePrediction'] != null
         ? PlacePrediction.fromJson(json['placePrediction'])
