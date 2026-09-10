@@ -187,7 +187,7 @@ class CheckOutController extends GetxController implements GetxService{
        paymentMethod : paymentMethod,
        zoneId : zoneId,
        schedule : schedule,
-       serviceAddressID : address.id == "null" ? "" : address.id,
+       serviceAddressID : address.id == "null" || address.id == null ? "" : address.id!,
        serviceAddress: address,
        isPartial: isPartial,
        serviceType: serviceType.name,

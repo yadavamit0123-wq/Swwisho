@@ -37,7 +37,7 @@ class _CartSummeryState extends State<CartSummery> {
 
               ConfigModel configModel = Get.find<SplashController>().configModel;
               List<CartModel> cartList = cartController.cartList;
-              num pendingCost = -(cartController.pendingCost);
+              double pendingCost = -(cartController.pendingCost).toDouble();
               double travelingCharge = double.parse(configModel.content?.travelingCharge?.toString() ?? "0.0");
               // double travelingCharge = CheckoutHelper.calculateTravelingCharge(cartList: cartList);
               double gstOnCommission = CheckoutHelper.calculateGstOnCommission(cartList: cartList);
