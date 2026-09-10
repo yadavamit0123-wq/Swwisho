@@ -230,13 +230,18 @@ class CheckoutHelper {
   }
 
 
-  static AddressModel? selectedAddressModel ({AddressModel? selectedAddress, AddressModel? pickedAddress}){
-    AddressModel? addressModel;
-    if(selectedAddress !=null && (selectedAddress.zoneId == pickedAddress?.zoneId)){
-      addressModel = selectedAddress ;
-    }else{
-      addressModel = pickedAddress;
+  static AddressModel? selectedAddressModel({
+    AddressModel? selectedAddress,
+    AddressModel? pickedAddress,
+    ServiceLocationType? selectedLocationType,
+  }) {
+    if (selectedLocationType == ServiceLocationType.provider) {
+      return selectedAddress ?? pickedAddress;
     }
-    return addressModel;
+
+    if (selectedAddress != null && selectedAddress.zoneId == pickedAddress?.zoneId) {
+      return selectedAddress;
+    }
+    return pickedAddress;
   }
 }
