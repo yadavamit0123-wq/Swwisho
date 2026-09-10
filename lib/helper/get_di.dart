@@ -73,7 +73,7 @@ import 'package:demandium/feature/profile/controller/select_image_controller.dar
 import 'package:demandium/feature/web_landing/controller/web_landing_controller.dart';
 import 'package:demandium/feature/suggest_new_service/controller/suggest_service_controller.dart';
 
-AppDatabase? database;
+late AppDatabase database;
 
 Future<Map<String, Map<String, String>>> init() async {
   final sharedPreferences = await SharedPreferences.getInstance();
