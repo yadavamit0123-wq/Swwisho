@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:demandium/utils/core_export.dart';
+import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
 class PaymentRedirectHelper {
