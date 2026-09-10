@@ -10,6 +10,9 @@ class BookingDetailsController extends GetxController implements GetxService {
 
   BookingDetailsController({required this.bookingDetailsRepo});
 
+  TextEditingController bookingIdController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+
   BookingDetailsContent? _bookingDetailsContent;
   BookingDetailsContent? _subBookingDetailsContent;
   DigitalPaymentMethod? _selectedDigitalPaymentMethod;
@@ -146,6 +149,22 @@ class BookingDetailsController extends GetxController implements GetxService {
       _subBookingDetailsContent = null;
     }
     update();
+  }
+
+  void resetTrackingData({bool shouldUpdate = true}) {
+    bookingIdController.clear();
+    phoneController.clear();
+    _bookingDetailsContent = null;
+    if (shouldUpdate) {
+      update();
+    }
+  }
+
+  @override
+  void onClose() {
+    bookingIdController.dispose();
+    phoneController.dispose();
+    super.onClose();
   }
 
   Future<void> manageDialog() async {
