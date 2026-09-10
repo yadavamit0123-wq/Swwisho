@@ -3,6 +3,8 @@ import 'package:demandium/feature/checkout/widget/payment_section/incomplete_off
 import 'package:demandium/utils/core_export.dart';
 import 'package:get/get.dart';
 
+enum BookingDetailsTabs { bookingDetails, status }
+
 class BookingDetailsController extends GetxController implements GetxService {
   final BookingDetailsRepo bookingDetailsRepo;
 
@@ -13,11 +15,18 @@ class BookingDetailsController extends GetxController implements GetxService {
   DigitalPaymentMethod? _selectedDigitalPaymentMethod;
 
   bool _isLoading = false;
+  BookingDetailsTabs _selectedBookingDetailsTab = BookingDetailsTabs.bookingDetails;
 
   BookingDetailsContent? get bookingDetailsContent => _bookingDetailsContent;
   BookingDetailsContent? get subBookingDetailsContent => _subBookingDetailsContent;
   DigitalPaymentMethod? get selectedDigitalPaymentMethod => _selectedDigitalPaymentMethod;
   bool get isLoading => _isLoading;
+  BookingDetailsTabs get selectedBookingDetailsTab => _selectedBookingDetailsTab;
+
+  void updateBookingStatusTabs(BookingDetailsTabs bookingDetailsTab) {
+    _selectedBookingDetailsTab = bookingDetailsTab;
+    update();
+  }
 
   Future<void> getBookingDetails({required String bookingId, bool reload = true}) async {
     if (reload) {
@@ -67,12 +76,22 @@ class BookingDetailsController extends GetxController implements GetxService {
     update();
   }
 
-  Future<void> bookingCancel({required String bookingId}) async {
+  Future<void> bookingCancel({required String bookingId, bool fromListScreen = false}) async {
     _isLoading = true;
     update();
     Response response = await bookingDetailsRepo.bookingCancel(bookingID: bookingId);
     if (response.statusCode == 200) {
-      await getBookingDetails(bookingId: bookingId, reload: false);
+      if (fromListScreen) {
+        ServiceBookingController serviceBookingController = Get.find<ServiceBookingController>();
+        await serviceBookingController.getAllBookingService(
+          offset: 1,
+          bookingStatus: serviceBookingController.selectedBookingStatus.name.toLowerCase(),
+          isFromPagination: false,
+          serviceType: serviceBookingController.selectedServiceType.name,
+        );
+      } else {
+        await getBookingDetails(bookingId: bookingId, reload: false);
+      }
       customSnackBar(response.body['message'], type: ToasterMessageType.success);
     } else {
       ApiChecker.checkApi(response);
