@@ -43,6 +43,22 @@ class CheckoutHelper {
     return vat;
   }
 
+  static double calculateCommission({required List<CartModel> cartList, int daysCount = 1}){
+    double commission = 0;
+    for (var cartModel in cartList) {
+      commission = commission + (cartModel.commission * daysCount);
+    }
+    return commission;
+  }
+
+  static double calculateGstOnCommission({required List<CartModel> cartList, int daysCount = 1}){
+    double gstOnCommission = 0;
+    for (var cartModel in cartList) {
+      gstOnCommission = gstOnCommission + (cartModel.gstOnCommission * daysCount);
+    }
+    return gstOnCommission;
+  }
+
 
   static double calculateSubTotal({required List<CartModel> cartList, int daysCount = 1}){
     double subTotalPrice  = 0;
@@ -52,11 +68,12 @@ class CheckoutHelper {
     return subTotalPrice ;
   }
 
-  static double calculateGrandTotal({required List<CartModel> cartList , required double referralDiscount, int daysCount = 1, int applicableCouponCount = 1}){
+  static double calculateGrandTotal({required List<CartModel> cartList , required double referralDiscount, int daysCount = 1, int applicableCouponCount = 1, double pendingAmount = 0}){
     return
       calculateSubTotal(cartList: cartList, daysCount: daysCount)
       + calculateVat(cartList: cartList, daysCount: daysCount)
       + getAdditionalCharge()
+      + pendingAmount
       - (calculateDiscount(cartList: cartList, discountType: DiscountType.general, daysCount: daysCount)
           + calculateDiscount(cartList: cartList, discountType: DiscountType.coupon, daysCount: applicableCouponCount)
           + calculateDiscount(cartList: cartList, discountType: DiscountType.campaign, daysCount: daysCount)
@@ -75,8 +92,8 @@ class CheckoutHelper {
       );
   }
 
-  static double calculateDueAmount({required List<CartModel> cartList, required bool walletPaymentStatus, required double walletBalance, required double bookingAmount, required double referralDiscount, int daysCount = 1}){
-    return calculateGrandTotal(cartList: cartList, referralDiscount: referralDiscount, daysCount: daysCount) - (walletPaymentStatus ? calculatePaidAmount(walletBalance: walletBalance, bookingAmount: bookingAmount) : 0);
+  static double calculateDueAmount({required List<CartModel> cartList, required bool walletPaymentStatus, required double walletBalance, required double bookingAmount, required double referralDiscount, int daysCount = 1, double pendingAmount = 0}){
+    return calculateGrandTotal(cartList: cartList, referralDiscount: referralDiscount, daysCount: daysCount, pendingAmount: pendingAmount) - (walletPaymentStatus ? calculatePaidAmount(walletBalance: walletBalance, bookingAmount: bookingAmount) : 0);
   }
 
   static double calculateRemainingWalletBalance({required double walletBalance, required double bookingAmount}){
