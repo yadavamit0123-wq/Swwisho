@@ -272,12 +272,11 @@ class _ProceedToCheckoutButtonWidgetState extends State<ProceedToCheckoutButtonW
     debugPrint("digital payment url =======> $url");
     debugPrint("test----a");
 
-    if (GetPlatform.isWeb) {
-      printLog("url_with_digital_payment:$url");
-      html.window.open(url, "_self");
-    } else {
-      printLog("url_with_digital_payment_mobile:$url");
-      Get.to(()=> PaymentScreen(url: url, fromPage: "checkout",));
-    }
+    printLog("url_with_digital_payment:$url");
+    DigitalPaymentHelper.launch(
+      paymentGateway: paymentMethod?.gateway ?? '',
+      paymentUrl: url,
+      fromPage: 'checkout',
+    );
   }
 }

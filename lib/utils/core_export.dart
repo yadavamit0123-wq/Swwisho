@@ -318,6 +318,7 @@ export 'package:demandium/common/widgets/service_center_dialog.dart';
 export 'package:demandium/common/widgets/service_widget_vertical.dart';
 export 'package:demandium/common/widgets/web_search_widget.dart';
 export 'package:demandium/helper/checkout_helper.dart';
+export 'package:demandium/helper/digital_payment_helper.dart';
 export 'package:demandium/common/widgets/custom_loader_widget.dart';
 export 'package:demandium/feature/cart/widget/provider_item_view.dart';
 export 'package:demandium/feature/home/widget/bottom_create_post_dialog.dart';

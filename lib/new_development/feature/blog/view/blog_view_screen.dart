@@ -14,7 +14,7 @@ class _BlogViewScreenState extends State<BlogViewScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
-  final String blogUrl = "https://test.swwisho.com/all-blogs";
+  final String blogUrl = "https://swwisho.com/all-blogs";
 
   @override
   void initState() {

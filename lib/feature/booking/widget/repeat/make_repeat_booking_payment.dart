@@ -175,12 +175,11 @@ class _ProductBottomSheetState extends State<RepeatBookingPaymentDialog> {
     url = '${AppConstants.baseUrl}/payment?payment_method=$paymentGateway&access_token=${base64Url.encode(utf8.encode(userId))}'
         '&callback=$callbackUrl&payment_platform=$platform&is_repeat_single_booking=1&booking_repeat_id=$repeatBookingId&booking_id=$bookingId';
 
-    if (GetPlatform.isWeb) {
-      printLog("url_with_digital_payment:$url");
-      html.window.open(url, "_self");
-    } else {
-      printLog("url_with_digital_payment_mobile:$url");
-      Get.to(()=> PaymentScreen(url:url, fromPage: "repeat-booking",));
-    }
+    printLog("url_with_digital_payment:$url");
+    DigitalPaymentHelper.launch(
+      paymentGateway: paymentGateway,
+      paymentUrl: url,
+      fromPage: 'repeat-booking',
+    );
   }
 }

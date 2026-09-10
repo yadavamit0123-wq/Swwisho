@@ -193,13 +193,16 @@ class _PaymentDialogState extends State<PaymentDialog> {
     url = '${AppConstants.baseUrl}/payment?payment_method=${paymentMethod?.gateway}&access_token=${base64Url.encode(utf8.encode(userId))}'
         '&booking_id=$bookingId&switch_offline_to_digital=1&callback=$callbackUrl&is_partial=$isPartial&payment_platform=$platform';
 
-    if (GetPlatform.isWeb) {
-      printLog("url_with_digital_payment:$url");
-      html.window.open(url, "_self");
-    } else {
+    if (!GetPlatform.isWeb) {
       Get.back();
-      printLog("url_with_digital_payment_mobile:$url");
-      await Get.to(()=> PaymentScreen(url:url, fromPage: "switch-payment-method",));
+    }
+    printLog("url_with_digital_payment:$url");
+    await DigitalPaymentHelper.launch(
+      paymentGateway: paymentMethod?.gateway ?? '',
+      paymentUrl: url,
+      fromPage: 'switch-payment-method',
+    );
+    if (!GetPlatform.isWeb) {
       Get.find<BookingDetailsController>().getBookingDetails(bookingId: bookingId);
     }
   }

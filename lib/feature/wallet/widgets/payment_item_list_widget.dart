@@ -233,12 +233,11 @@ class _PaymentMethodListWidgetState extends State<PaymentMethodListWidget> {
     url = '${AppConstants.baseUrl}/payment?payment_method=$paymentGateway&access_token=${base64Url.encode(utf8.encode(userId))}'
         '&callback=$callbackUrl&amount=$amount&payment_platform=$platform&is_add_fund=1';
 
-    if (GetPlatform.isWeb) {
-      printLog("url_with_digital_payment:$url");
-      html.window.open(url, "_self");
-    } else {
-      printLog("url_with_digital_payment_mobile:$url");
-      Get.to(()=> PaymentScreen(url:url, fromPage: "add-fund",));
-    }
+    printLog("url_with_digital_payment:$url");
+    DigitalPaymentHelper.launch(
+      paymentGateway: paymentGateway,
+      paymentUrl: url,
+      fromPage: 'add-fund',
+    );
   }
 }

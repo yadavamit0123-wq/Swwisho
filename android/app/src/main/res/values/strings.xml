@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swwisho</string>
+    <string name="facebook_app_id">894478949810159</string>
+    <!-- Get from Meta Developer Console → App → Settings → Advanced → Client token -->
+    <string name="facebook_client_token">REPLACE_WITH_META_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme">fb894478949810159</string>
+</resources>

@@ -44,6 +44,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   universal_html: ^2.2.4
   flutter_inappwebview: ^6.1.5
+  razorpay_flutter: ^1.4.0
   timeago: ^3.7.0
   pdf: ^3.11.1
   diffutil_dart: ^4.0.1
@@ -80,6 +81,7 @@ dependencies:
   drift: ^2.25.1
   drift_flutter: ^0.2.4
   facebook_app_events: ^0.21.0
+  app_tracking_transparency: ^2.0.6
   upgrader: ^12.5.0
   package_info_plus: ^8.3.0
   in_app_update: ^4.1.3

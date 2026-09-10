@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'helper/facebook_event_helper.dart';
+import 'helper/meta_sdk_helper.dart';
 import 'utils/core_export.dart';
 import 'helper/get_di.dart' as di;
 import 'package:facebook_app_events/facebook_app_events.dart';
@@ -30,13 +31,14 @@ Future<void> main() async {
         )
     );
     await FacebookAuth.instance.webAndDesktopInitialize(
-      appId: "894478949810159",
+      appId: AppConstants.facebookAppId,
       cookie: true,
       xfbml: true,
       version: "v15.0",
     );
-  }else{
+  } else {
     await Firebase.initializeApp();
+    await MetaSdkHelper.initialize();
   }
 
   if(defaultTargetPlatform == TargetPlatform.android) {
@@ -63,8 +65,11 @@ Future<void> main() async {
       print("");
     }
   }
-  var id = await FacebookAppEvents().getAnonymousId();
-  debugPrint(' $id');
+  if (!kIsWeb) {
+    final anonymousId = await FacebookAppEvents().getAnonymousId();
+    debugPrint('Meta anonymous id: $anonymousId');
+    FacebookEventHelper.logSimpleEvent('Swwisho_Opened');
+  }
 
   // Dynamic version set
   final packageInfo = await PackageInfo.fromPlatform();
@@ -140,8 +145,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    FacebookEventHelper.logSimpleEvent("Swwisho_Opened");
-
     return GetBuilder<ThemeController>(builder: (themeController) {
       return GetBuilder<LocalizationController>(builder: (localizeController) {
         return GetBuilder<SplashController>(builder: (splashController) {
