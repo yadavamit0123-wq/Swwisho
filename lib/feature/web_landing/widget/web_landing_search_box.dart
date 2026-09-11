@@ -294,6 +294,7 @@ class _WebLandingSearchSectionState extends State<WebLandingSearchSection> {
                                             );
 
                                             if(response.isSuccess) {
+                                              if (Get.isDialogOpen ?? false) Get.back();
                                               Get.find<LocationController>().saveAddressAndNavigate(
                                                 _address!, widget.fromSignUp!, widget.route, false , true
                                               );

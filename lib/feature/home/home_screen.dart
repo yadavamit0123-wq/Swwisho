@@ -54,9 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
       Get.find<LocationController>().getAddressList();
     }
     if(Get.find<LocationController>().getUserAddress() !=null){
-      availableServiceCount = Get.find<LocationController>().getUserAddress()!.availableServiceCountInZone!;
+      availableServiceCount = Get.find<LocationController>().getUserAddress()?.availableServiceCountInZone ?? 1;
     }
-    HomeScreen.loadData(false, availableServiceCount: availableServiceCount);
+    if (Get.find<CategoryController>().categoryList == null && Get.find<ServiceController>().allService == null) {
+      HomeScreen.loadData(false, availableServiceCount: availableServiceCount);
+    }
 
     _previousAddress = widget.addressModel;
 

@@ -1,3 +1,4 @@
+import 'package:demandium/helper/get_di.dart';
 import 'package:get/get.dart';
 import 'package:demandium/utils/core_export.dart';
 
@@ -30,11 +31,26 @@ class LocationRepo {
   }
 
   Future<bool> saveUserAddress(String address, String? zoneIDs) async {
+    String? previousZoneId;
+    final previousAddress = sharedPreferences.getString(AppConstants.userAddress);
+    if (previousAddress != null && previousAddress.isNotEmpty) {
+      try {
+        previousZoneId = AddressModel.fromJson(jsonDecode(previousAddress)).zoneId;
+      } catch (_) {}
+    }
+
     apiClient.updateHeader(
       sharedPreferences.getString(AppConstants.token), zoneIDs,
       sharedPreferences.getString(AppConstants.languageCode),
       sharedPreferences.getString(AppConstants.guestId)
     );
+
+    final isFirstAddress = previousAddress == null || previousAddress.isEmpty;
+    final zoneChanged = zoneIDs != null && zoneIDs.isNotEmpty && previousZoneId != zoneIDs;
+    if (isFirstAddress || zoneChanged) {
+      await database.clearCacheResponses();
+    }
+
     return await sharedPreferences.setString(AppConstants.userAddress, address);
   }
 

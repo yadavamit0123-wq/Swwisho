@@ -377,6 +377,8 @@ class LocationController extends GetxController implements GetxService {
     if(zoneIds != null && zoneIds.isNotEmpty){
       address.zoneId = zoneIds;
       autoNavigate(address, fromSignUp, route, canRoute, previousAddress,isServiceAvailable, shouldCartDelete: shouldCartDelete, showDialog: showDialog);
+    } else {
+      customSnackBar('service_not_available_in_current_location'.tr, type: ToasterMessageType.info);
     }
 
   }
@@ -394,7 +396,8 @@ class LocationController extends GetxController implements GetxService {
       }
     }
     await saveUserAddress(address);
-    HomeScreen.loadData(true);
+    if (Get.isDialogOpen ?? false) Get.back();
+    await HomeScreen.loadData(true, availableServiceCount: address.availableServiceCountInZone ?? 1);
     if(canRoute && route !=null && route != "" && route != "home"){
       Get.offAllNamed(route);
     }else{
