@@ -40,24 +40,50 @@ class _CartSummeryState extends State<CartSummery> {
               double pendingCost = -(cartController.pendingCost).toDouble();
               double travelingCharge = double.parse(configModel.content?.travelingCharge?.toString() ?? "0.0");
               // double travelingCharge = CheckoutHelper.calculateTravelingCharge(cartList: cartList);
-              double gstOnCommission = CheckoutHelper.calculateGstOnCommission(cartList: cartList);
-              double commission = CheckoutHelper.calculateCommission(cartList: cartList);
               double minimumAmountForTravelingCharge = (configModel.content?.minimumAmountForTravelingCharge ?? 0.0);
               bool walletPaymentStatus = cartController.walletPaymentStatus;
               int applicableCouponCount = CheckoutHelper.getNumberOfDaysForApplicableCoupon(pickedScheduleDays:scheduleDaysCount) ?? 1;
               double additionalCharge = CheckoutHelper.getAdditionalCharge();
-              bool isPartialPayment = CheckoutHelper.checkPartialPayment(walletBalance: cartController.walletBalance, bookingAmount: cartController.totalPrice);
-              double paidAmount = CheckoutHelper.calculatePaidAmount(walletBalance: cartController.walletBalance, bookingAmount: cartController.totalPrice);
               double subTotalPrice =  CheckoutHelper.calculateSubTotal(cartList: cartList, daysCount: scheduleDaysCount);
               double disCount = CheckoutHelper.calculateDiscount(cartList: cartList, discountType: DiscountType.general, daysCount: scheduleDaysCount);
               double campaignDisCount = CheckoutHelper.calculateDiscount(cartList: cartList, discountType: DiscountType.campaign, daysCount: scheduleDaysCount);
               double couponDisCount = CheckoutHelper.calculateDiscount(cartList: cartList, discountType: DiscountType.coupon, daysCount: applicableCouponCount);
               double referDisCount = cartController.referralAmount;
-              // double vat =  CheckoutHelper.calculateVat(cartList: cartList, daysCount: scheduleDaysCount);
-              double grandTotal = CheckoutHelper.calculateGrandTotal(cartList: cartList, referralDiscount: referDisCount, daysCount: scheduleDaysCount, pendingAmount: pendingCost);
-              double dueAmount = CheckoutHelper.calculateDueAmount(cartList: cartList, walletPaymentStatus: walletPaymentStatus, walletBalance:cartController.walletBalance, bookingAmount: cartController.totalPrice, referralDiscount: referDisCount, daysCount: scheduleDaysCount, pendingAmount: pendingCost);
-
-              gstOnCommission += commission;
+              double orderValue = CheckoutHelper.calculateOrderValue(
+                cartList: cartList,
+                referralDiscount: referDisCount,
+                daysCount: scheduleDaysCount,
+                applicableCouponCount: applicableCouponCount,
+              );
+              double feesAndTaxes = CheckoutHelper.calculateFeesAndTaxes(cartList: cartList, daysCount: scheduleDaysCount);
+              double appliedTravelingCharge = CheckoutHelper.calculateTravelingCharge(
+                orderValue: orderValue,
+                travelingCharge: travelingCharge,
+                minimumAmountForTravelingCharge: minimumAmountForTravelingCharge,
+              );
+              checkoutController.travelingChargeForPayment = appliedTravelingCharge;
+              travelingCharge = appliedTravelingCharge;
+              double grandTotal = CheckoutHelper.calculateGrandTotal(
+                cartList: cartList,
+                referralDiscount: referDisCount,
+                daysCount: scheduleDaysCount,
+                applicableCouponCount: applicableCouponCount,
+                pendingAmount: pendingCost,
+                travelingCharge: appliedTravelingCharge,
+              );
+              bool isPartialPayment = CheckoutHelper.checkPartialPayment(walletBalance: cartController.walletBalance, bookingAmount: grandTotal);
+              double paidAmount = CheckoutHelper.calculatePaidAmount(walletBalance: cartController.walletBalance, bookingAmount: grandTotal);
+              double dueAmount = CheckoutHelper.calculateDueAmount(
+                cartList: cartList,
+                walletPaymentStatus: walletPaymentStatus,
+                walletBalance: cartController.walletBalance,
+                bookingAmount: grandTotal,
+                referralDiscount: referDisCount,
+                daysCount: scheduleDaysCount,
+                applicableCouponCount: applicableCouponCount,
+                pendingAmount: pendingCost,
+                travelingCharge: appliedTravelingCharge,
+              );
 
               Future.delayed(const Duration(milliseconds: 200), (){
                 cartController.updateTotalPrice = grandTotal;
@@ -65,18 +91,10 @@ class _CartSummeryState extends State<CartSummery> {
               });
 
 
-              if (cartController.hasShownTravelFreeMessage && grandTotal < minimumAmountForTravelingCharge) {
+              if (cartController.hasShownTravelFreeMessage && orderValue < minimumAmountForTravelingCharge) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   cartController.showTravelingToast(false, minimumAmountForTravelingCharge);
                 });
-              }
-
-              if(grandTotal < minimumAmountForTravelingCharge){
-                checkoutController.travelingChargeForPayment = travelingCharge;
-                grandTotal += travelingCharge;
-              }else{
-                checkoutController.travelingChargeForPayment = 0.0;
-                travelingCharge = 0.0;
               }
 
               return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -136,7 +154,7 @@ class _CartSummeryState extends State<CartSummery> {
                     if(travelingCharge > 0)
                     RowText(title: 'traveling_charge'.tr, price: double.parse(travelingCharge.toString())),
 
-                    RowText(title: 'fees_and_taxes'.tr, price: double.parse(gstOnCommission.toString())),
+                    RowText(title: 'fees_and_taxes'.tr, price: double.parse(feesAndTaxes.toString())),
 
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeSmall),

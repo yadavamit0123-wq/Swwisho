@@ -13,5 +13,8 @@ class DbHelper{
     }
   }
 
+  static Future<void> clearCache() async {
+    await database.clearCacheResponses();
+  }
 
 }

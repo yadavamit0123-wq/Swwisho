@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:demandium/helper/get_di.dart';
+import 'package:demandium/helper/db_helper.dart';
 import 'package:get/get.dart';
 import 'package:demandium/utils/core_export.dart';
 
@@ -50,7 +50,7 @@ class LocationRepo {
     final isFirstAddress = previousAddress == null || previousAddress.isEmpty;
     final zoneChanged = zoneIDs != null && zoneIDs.isNotEmpty && previousZoneId != zoneIDs;
     if (isFirstAddress || zoneChanged) {
-      await database.clearCacheResponses();
+      await DbHelper.clearCache();
     }
 
     return await sharedPreferences.setString(AppConstants.userAddress, address);
