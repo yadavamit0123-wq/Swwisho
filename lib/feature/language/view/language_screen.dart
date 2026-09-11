@@ -94,8 +94,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                             if(Get.find<SplashController>().isShowOnboardingScreen() && !kIsWeb){
                               Get.offNamed(RouteHelper.onBoardScreen);
                             }else{
-                              HomeScreen.loadData(true);
-                              Get.offAllNamed(RouteHelper.getMainRoute("home"));
+                              Get.offAllNamed(RouteHelper.getInitialRoute());
                             }
                           },
                           buttonText: 'save'.tr,

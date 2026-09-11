@@ -143,6 +143,7 @@ void _checkPermissionAndNavigate() async {
     ZoneResponseModel response = await Get.find<LocationController>().getZone(address.latitude!, address.longitude!, false);
 
     if(response.isSuccess) {
+      if (Get.isDialogOpen ?? false) Get.back();
       Get.find<LocationController>().saveAddressAndNavigate(address, false, '', false, true);
     }else {
       Get.back();

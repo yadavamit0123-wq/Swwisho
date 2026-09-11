@@ -84,6 +84,7 @@ class _AccessLocationScreenState extends State<AccessLocationScreen> {
                                         Get.dialog(const CustomLoader(), barrierDismissible: false);
                                         AddressModel address = locationController.addressList![index];
                                         await locationController.setAddressIndex(address,fromAddressScreen: false);
+                                        if (Get.isDialogOpen ?? false) Get.back();
                                         locationController.saveAddressAndNavigate(address, widget.fromSignUp!, widget.route, widget.route != null, true);
                                       },
                                       selectedUserAddressId: locationController.getUserAddress()?.id,
@@ -175,6 +176,7 @@ class BottomButton extends StatelessWidget {
             ZoneResponseModel response = await locationController.getZone(address.latitude!, address.longitude!, false);
 
             if(response.isSuccess) {
+              if (Get.isDialogOpen ?? false) Get.back();
               locationController.saveAddressAndNavigate(address, fromSignUp, route != null ? route! : '', route != null, true);
             }else {
               Get.back();

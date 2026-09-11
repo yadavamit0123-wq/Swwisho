@@ -374,7 +374,7 @@ class LocationController extends GetxController implements GetxService {
   }
 
   void _setZoneData(AddressModel address, bool fromSignUp, String? route, bool canRoute,bool shouldCartDelete, String? zoneIds, AddressModel? previousAddress, bool? isServiceAvailable, {String? showDialog}) {
-    if(zoneIds != null){
+    if(zoneIds != null && zoneIds.isNotEmpty){
       address.zoneId = zoneIds;
       autoNavigate(address, fromSignUp, route, canRoute, previousAddress,isServiceAvailable, shouldCartDelete: shouldCartDelete, showDialog: showDialog);
     }
