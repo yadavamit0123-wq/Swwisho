@@ -39,7 +39,13 @@ class CategoryController extends GetxController implements GetxService {
         onResponse: (data, source) {
           _categoryList = [];
           try {
-            final list = data is Map ? data['content']?['data'] : null;
+            dynamic list;
+            if (data is Map) {
+              final content = data['content'];
+              if (content is Map) {
+                list = content['data'];
+              }
+            }
             if (list is List) {
               for (final category in list) {
                 try {
