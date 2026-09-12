@@ -105,19 +105,25 @@ class BannerModel {
 
 
   BannerModel.fromJson(Map<String, dynamic> json) {
-    _id = json['id'];
-    _bannerTitle = json['banner_title'];
-    _resourceType = json['resource_type'];
-    _resourceId = json['resource_id'];
-    _redirectLink = json['redirect_link'];
-    _bannerImage = json['banner_image'];
-    _bannerImageFullPath = json['banner_image_full_path'];
-    _createdAt = json['created_at'];
-    _updatedAt = json['updated_at'];
-    _service = json['service'] != null ? Service.fromJson(json['service']) : null;
-    _category = json['category'] != null
-        ? CategoryModel.fromJson(json['category'])
-        : null;
+    _id = json['id']?.toString();
+    _bannerTitle = json['banner_title']?.toString();
+    _resourceType = json['resource_type']?.toString();
+    _resourceId = json['resource_id']?.toString();
+    _redirectLink = json['redirect_link']?.toString();
+    _bannerImage = json['banner_image']?.toString();
+    _bannerImageFullPath = json['banner_image_full_path']?.toString();
+    _createdAt = json['created_at']?.toString();
+    _updatedAt = json['updated_at']?.toString();
+    try {
+      if (json['service'] is Map) {
+        _service = Service.fromJson(Map<String, dynamic>.from(json['service']));
+      }
+    } catch (_) {}
+    try {
+      if (json['category'] is Map) {
+        _category = CategoryModel.fromJson(Map<String, dynamic>.from(json['category']));
+      }
+    } catch (_) {}
   }
 
   Map<String, dynamic> toJson() {

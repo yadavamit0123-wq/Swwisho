@@ -22,7 +22,8 @@ class HomeSearchBar extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge),
-            color: Theme.of(context).cardColor,
+            color: Theme.of(context).hintColor.withValues(alpha: 0.08),
+            border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.25)),
           ),
           child: Row(children: [
             const SizedBox(width: Dimensions.paddingSizeExtraSmall),

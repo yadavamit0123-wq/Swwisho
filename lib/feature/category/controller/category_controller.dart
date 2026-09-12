@@ -49,7 +49,9 @@ class CategoryController extends GetxController implements GetxService {
             if (list is List) {
               for (final category in list) {
                 try {
-                  _categoryList!.add(CategoryModel.fromJson(category));
+                  if (category is Map) {
+                    _categoryList!.add(CategoryModel.fromJson(Map<String, dynamic>.from(category)));
+                  }
                 } catch (_) {}
               }
             }

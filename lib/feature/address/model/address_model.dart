@@ -42,26 +42,24 @@ class AddressModel {
       });
 
   AddressModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'].toString();
-    userId = json['user_id'];
-    contactPersonNumber = json['contact_person_number'];
-    address = json['address'];
-    addressType = json['address_type'];
-    addressLabel = json['address_label'];
-    latitude = json['lat'];
-    longitude = json['lon'];
-    city = json['city'];
-    zipCode = json['zip_code'];
-    country = json['country'];
-    zoneId = json['zone_id'];
-    contactPersonName = json['contact_person_name'];
-    contactPersonNumber = json['contact_person_number'];
-    contactPersonLabel = json['address_label'];
-    street = json['street'];
-    house = json['house'];
-    floor = json['floor'];
-    availableServiceCountInZone = json['available_service_count'];
-
+    id = json['id']?.toString();
+    userId = json['user_id']?.toString();
+    contactPersonNumber = json['contact_person_number']?.toString();
+    address = json['address']?.toString();
+    addressType = json['address_type']?.toString();
+    addressLabel = json['address_label']?.toString();
+    latitude = json['lat']?.toString();
+    longitude = json['lon']?.toString();
+    city = json['city']?.toString();
+    zipCode = json['zip_code']?.toString();
+    country = json['country']?.toString();
+    zoneId = json['zone_id']?.toString();
+    contactPersonName = json['contact_person_name']?.toString();
+    contactPersonLabel = json['address_label']?.toString();
+    street = json['street']?.toString();
+    house = json['house']?.toString();
+    floor = json['floor']?.toString();
+    availableServiceCountInZone = int.tryParse(json['available_service_count']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {

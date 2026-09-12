@@ -28,7 +28,11 @@ class RecommendedServiceView extends StatelessWidget {
                       alignment: favButtonAlignment(),
                       child: Opacity(
                         opacity: 0.4,
-                        child: Image.asset(Images.recommendedServiceBg, fit: BoxFit.fitHeight,),
+                        child: Image.asset(
+                          Images.recommendedServiceBg,
+                          fit: BoxFit.fitHeight,
+                          errorBuilder: (_, __, ___) => const SizedBox(),
+                        ),
                       ),
                     ),
                   ),

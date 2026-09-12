@@ -65,7 +65,7 @@ class BannerView extends StatelessWidget {
               bannerController.banners!.length > 1 ? Align(
                 alignment: Alignment.center,
                 child: AnimatedSmoothIndicator(
-                  activeIndex: bannerController.currentIndex!,
+                  activeIndex: bannerController.currentIndex ?? 0,
                   count: bannerController.banners!.length,
                   effect: ExpandingDotsEffect(
                     dotHeight: 7,

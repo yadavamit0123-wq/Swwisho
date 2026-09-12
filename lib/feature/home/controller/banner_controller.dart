@@ -22,9 +22,24 @@ class BannerController extends GetxController implements GetxService {
         fetchFromClient: ()=> bannerRepo.getBannerList(source: DataSourceEnum.client),
         onResponse: (data, source) {
           _banners = [];
-          data['content']['data'].forEach((banner) {
-            _banners!.add(BannerModel.fromJson(banner));
-          });
+          try {
+            dynamic list;
+            if (data is Map) {
+              final content = data['content'];
+              if (content is Map) {
+                list = content['data'];
+              }
+            }
+            if (list is List) {
+              for (final banner in list) {
+                try {
+                  if (banner is Map) {
+                    _banners!.add(BannerModel.fromJson(Map<String, dynamic>.from(banner)));
+                  }
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
           update();
         },
       );

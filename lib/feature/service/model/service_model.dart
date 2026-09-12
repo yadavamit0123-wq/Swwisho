@@ -9,11 +9,11 @@ class ServiceModel {
   ServiceModel({this.responseCode, this.message, this.content});
 
   ServiceModel.fromJson(Map<String, dynamic> json) {
-    responseCode = json['response_code'];
-    message = json['message'];
-    content =
-    json['content'] != null ? ServiceContent.fromJson(json['content']) : null;
-
+    responseCode = json['response_code']?.toString();
+    message = json['message']?.toString();
+    if (json['content'] is Map) {
+      content = ServiceContent.fromJson(Map<String, dynamic>.from(json['content']));
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -44,16 +44,20 @@ class ServiceContent {
   });
 
   ServiceContent.fromJson(Map<String, dynamic> json) {
-    currentPage = json['current_page'];
-    if (json['data'] != null) {
+    currentPage = int.tryParse(json['current_page']?.toString() ?? '');
+    if (json['data'] is List) {
       serviceList = <Service>[];
-      json['data'].forEach((v) {
-        serviceList!.add(Service.fromJson(v));
-      });
+      for (final v in json['data']) {
+        try {
+          if (v is Map) {
+            serviceList!.add(Service.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    from = json['from'];
-    lastPage = json['last_page'];
-    total = json['total'];
+    from = int.tryParse(json['from']?.toString() ?? '');
+    lastPage = int.tryParse(json['last_page']?.toString() ?? '');
+    total = int.tryParse(json['total']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -125,62 +129,88 @@ class Service {
       });
 
   Service.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    name = json['name'];
-    shortDescription = json['short_description'];
-    description = json['description'];
-    coverImage = json['cover_image'];
-    coverImageFullPath = json['cover_image_full_path'];
-    thumbnail = json['thumbnail'];
-    thumbnailFullPath = json['thumbnail_full_path'];
-    categoryId = json['category_id'];
-    subCategoryId = json['sub_category_id'];
-    tax = double.tryParse(json['tax'].toString());
-    orderCount = json['order_count'];
-    isActive = json['is_active'];
-    isFavorite = json['is_favorite'];
-    ratingCount = json['rating_count'];
-    avgRating = json['avg_rating'].toDouble();
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    variationsAppFormat = json['variations_app_format'] != null
-        ? VariationsAppFormat.fromJson(json['variations_app_format'])
-        : null;
+    id = json['id']?.toString();
+    name = json['name']?.toString();
+    shortDescription = json['short_description']?.toString();
+    description = json['description']?.toString();
+    coverImage = json['cover_image']?.toString();
+    coverImageFullPath = json['cover_image_full_path']?.toString();
+    thumbnail = json['thumbnail']?.toString();
+    thumbnailFullPath = json['thumbnail_full_path']?.toString();
+    categoryId = json['category_id']?.toString();
+    subCategoryId = json['sub_category_id']?.toString();
+    tax = double.tryParse(json['tax']?.toString() ?? '');
+    orderCount = int.tryParse(json['order_count']?.toString() ?? '');
+    isActive = int.tryParse(json['is_active']?.toString() ?? '');
+    isFavorite = int.tryParse(json['is_favorite']?.toString() ?? '');
+    ratingCount = int.tryParse(json['rating_count']?.toString() ?? '');
+    avgRating = double.tryParse(json['avg_rating']?.toString() ?? '');
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    try {
+      if (json['variations_app_format'] is Map) {
+        variationsAppFormat = VariationsAppFormat.fromJson(
+          Map<String, dynamic>.from(json['variations_app_format']),
+        );
+      }
+    } catch (_) {}
 
-    if (json['variations'] != null) {
+    if (json['variations'] is List) {
       variations = <Variations>[];
-      json['variations'].forEach((v) {
-        variations!.add(Variations.fromJson(v));
-      });
+      for (final v in json['variations']) {
+        try {
+          if (v is Map) {
+            variations!.add(Variations.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
 
-    if (json['reviews'] != null) {
+    if (json['reviews'] is List) {
       review = <Review>[];
-      json['reviews'].forEach((v) {
-        review!.add(Review.fromJson(v));
-      });
+      for (final v in json['reviews']) {
+        try {
+          if (v is Map) {
+            review!.add(Review.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
 
-    category = json['category'] != null
-        ? ServiceCategory.fromJson(json['category'])
-        : null;
-    if (json['faqs'] != null) {
+    try {
+      if (json['category'] is Map) {
+        category = ServiceCategory.fromJson(Map<String, dynamic>.from(json['category']));
+      }
+    } catch (_) {}
+    if (json['faqs'] is List) {
       faqs = <Faqs>[];
-      json['faqs'].forEach((v) {
-        faqs!.add(Faqs.fromJson(v));
-      });
+      for (final v in json['faqs']) {
+        try {
+          if (v is Map) {
+            faqs!.add(Faqs.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    if (json['service_discount'] != null) {
+    if (json['service_discount'] is List) {
       serviceDiscount = <ServiceDiscount>[];
-      json['service_discount'].forEach((v) {
-        serviceDiscount!.add(ServiceDiscount.fromJson(v));
-      });
+      for (final v in json['service_discount']) {
+        try {
+          if (v is Map) {
+            serviceDiscount!.add(ServiceDiscount.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    if (json['campaign_discount'] != null) {
+    if (json['campaign_discount'] is List) {
       campaignDiscount = <ServiceDiscount>[];
-      json['campaign_discount'].forEach((v) {
-        campaignDiscount!.add(ServiceDiscount.fromJson(v));
-      });
+      for (final v in json['campaign_discount']) {
+        try {
+          if (v is Map) {
+            campaignDiscount!.add(ServiceDiscount.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
   }
 
@@ -240,13 +270,17 @@ class VariationsAppFormat {
       {this.zoneId, this.defaultPrice, this.zoneWiseVariations});
 
   VariationsAppFormat.fromJson(Map<String, dynamic> json) {
-    zoneId = json['zone_id'];
-    defaultPrice = json['default_price'].toDouble();
-    if (json['zone_wise_variations'] != null) {
+    zoneId = json['zone_id']?.toString();
+    defaultPrice = double.tryParse(json['default_price']?.toString() ?? '');
+    if (json['zone_wise_variations'] is List) {
       zoneWiseVariations = <ZoneWiseVariations>[];
-      json['zone_wise_variations'].forEach((v) {
-        zoneWiseVariations!.add(ZoneWiseVariations.fromJson(v));
-      });
+      for (final v in json['zone_wise_variations']) {
+        try {
+          if (v is Map) {
+            zoneWiseVariations!.add(ZoneWiseVariations.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
   }
 
@@ -285,14 +319,14 @@ class Variations {
         this.zone});
 
   Variations.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    variant = json['variant'];
-    variantKey = json['variant_key'];
-    serviceId = json['service_id'];
-    zoneId = json['zone_id'];
-    price = json['price'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    id = int.tryParse(json['id']?.toString() ?? '');
+    variant = json['variant']?.toString();
+    variantKey = json['variant_key']?.toString();
+    serviceId = json['service_id']?.toString();
+    zoneId = json['zone_id']?.toString();
+    price = num.tryParse(json['price']?.toString() ?? '');
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -317,9 +351,9 @@ class ZoneWiseVariations {
   ZoneWiseVariations({this.variantKey, this.variantName, this.price,});
 
   ZoneWiseVariations.fromJson(Map<String, dynamic> json) {
-    variantKey = json['variant_key'];
-    variantName = json['variant_name'];
-    price = json['price'].toDouble();
+    variantKey = json['variant_key']?.toString();
+    variantName = json['variant_name']?.toString();
+    price = num.tryParse(json['price']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -360,15 +394,15 @@ class ServiceCategory {
       });
 
   ServiceCategory.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    parentId = json['parent_id'];
-    name = json['name'];
-    image = json['image'];
-    position = json['position'];
-    description = json['description'];
-    isActive = json['is_active'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    id = json['id']?.toString();
+    parentId = json['parent_id']?.toString();
+    name = json['name']?.toString();
+    image = json['image']?.toString();
+    position = int.tryParse(json['position']?.toString() ?? '');
+    description = json['description']?.toString();
+    isActive = int.tryParse(json['is_active']?.toString() ?? '');
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
 
     if (json['category_discount'] != null) {
       categoryDiscount = <ServiceDiscount>[];

@@ -14,7 +14,7 @@ class SplashController extends GetxController implements GetxService {
 
 
   bool get isLoading => _isLoading;
-  ConfigModel get configModel => _configModel!;
+  ConfigModel get configModel => _configModel ?? ConfigModel();
   DateTime get currentTime => DateTime.now();
   bool get firstTimeConnectionCheck => _firstTimeConnectionCheck;
   bool get hasConnection => _hasConnection;

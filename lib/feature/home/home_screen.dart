@@ -6,25 +6,45 @@ import '../../utils/appp_upgrade_wrapper.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  static Future<void> loadData(bool reload, {int availableServiceCount = 1}) async {
+  static Future<void> _safeLoad(Future<void> Function() task) async {
     try {
-      await Future.wait([
-        Get.find<ServiceController>().getRecommendedSearchList(),
-        Get.find<ServiceController>().getAllServiceList(1,reload),
-        Get.find<BannerController>().getBannerList(reload),
-        Get.find<AdvertisementController>().getAdvertisementList(reload),
-        Get.find<CategoryController>().getCategoryList(reload),
-        Get.find<ServiceController>().getPopularServiceList(1,reload),
-        Get.find<ServiceController>().getTrendingServiceList(1,reload),
-        Get.find<ProviderBookingController>().getProviderList(1,reload),
-        Get.find<NearbyProviderController>().getProviderList(1,reload),
-        Get.find<CampaignController>().getCampaignList(reload),
-        Get.find<ServiceController>().getRecommendedServiceList(1, reload),
-        Get.find<CheckOutController>().getOfflinePaymentMethod(false, shouldUpdate: false),
-        Get.find<ServiceController>().getFeatherCategoryList(reload),
-        if(Get.find<AuthController>().isLoggedIn())  Get.find<AuthController>().updateToken(),
-        if(Get.find<AuthController>().isLoggedIn())  Get.find<ServiceController>().getRecentlyViewedServiceList(1,reload),
-      ]);
+      await task();
+    } catch (_) {}
+  }
+
+  static void _applySavedZoneHeader() {
+    try {
+      final address = Get.find<LocationController>().getUserAddress();
+      final prefs = Get.find<SharedPreferences>();
+      Get.find<ApiClient>().updateHeader(
+        prefs.getString(AppConstants.token),
+        address?.zoneId,
+        prefs.getString(AppConstants.languageCode),
+        prefs.getString(AppConstants.guestId),
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> loadData(bool reload, {int availableServiceCount = 1}) async {
+    _applySavedZoneHeader();
+    await Future.wait([
+      _safeLoad(() => Get.find<ServiceController>().getRecommendedSearchList()),
+      _safeLoad(() => Get.find<ServiceController>().getAllServiceList(1,reload)),
+      _safeLoad(() => Get.find<BannerController>().getBannerList(reload)),
+      _safeLoad(() => Get.find<AdvertisementController>().getAdvertisementList(reload)),
+      _safeLoad(() => Get.find<CategoryController>().getCategoryList(reload)),
+      _safeLoad(() => Get.find<ServiceController>().getPopularServiceList(1,reload)),
+      _safeLoad(() => Get.find<ServiceController>().getTrendingServiceList(1,reload)),
+      _safeLoad(() => Get.find<ProviderBookingController>().getProviderList(1,reload)),
+      _safeLoad(() => Get.find<NearbyProviderController>().getProviderList(1,reload)),
+      _safeLoad(() => Get.find<CampaignController>().getCampaignList(reload)),
+      _safeLoad(() => Get.find<ServiceController>().getRecommendedServiceList(1, reload)),
+      _safeLoad(() => Get.find<CheckOutController>().getOfflinePaymentMethod(false, shouldUpdate: false)),
+      _safeLoad(() => Get.find<ServiceController>().getFeatherCategoryList(reload)),
+      if(Get.find<AuthController>().isLoggedIn()) _safeLoad(() => Get.find<AuthController>().updateToken()),
+      if(Get.find<AuthController>().isLoggedIn()) _safeLoad(() => Get.find<ServiceController>().getRecentlyViewedServiceList(1,reload)),
+    ]);
+    try {
       Get.find<BookingDetailsController>().manageDialog();
     } catch (_) {}
   }
@@ -52,6 +72,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if(Get.find<LocationController>().getUserAddress() !=null){
       availableServiceCount = Get.find<LocationController>().getUserAddress()?.availableServiceCountInZone ?? 1;
+    }
+    if (availableServiceCount <= 0) {
+      availableServiceCount = 1;
     }
     HomeScreen.loadData(true, availableServiceCount: availableServiceCount);
     _previousAddress = widget.addressModel;
@@ -86,14 +109,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 return GetBuilder<CategoryController>(builder: (categoryController){
                 return GetBuilder<ServiceController>(builder: (serviceController){
 
-                  availableServiceCount = locationController.getUserAddress()?.availableServiceCountInZone ?? availableServiceCount;
-                  final hasLoadedServices = serviceController.allService != null || categoryController.categoryList != null;
-                  final hasAnyService = (serviceController.allService?.isNotEmpty ?? false) ||
-                      (categoryController.categoryList?.isNotEmpty ?? false);
-                  final showHomeContent = availableServiceCount > 0 || !hasLoadedServices || hasAnyService;
+                  final zoneCount = locationController.getUserAddress()?.availableServiceCountInZone;
+                  if (zoneCount != null && zoneCount > 0) {
+                    availableServiceCount = zoneCount;
+                  } else if (availableServiceCount <= 0) {
+                    availableServiceCount = 1;
+                  }
+                  const showHomeContent = true;
 
                   bool isAvailableProvider = providerController.providerList != null && providerController.providerList!.isNotEmpty;
-                  int ? providerBooking = splashController.configModel.content?.directProviderBooking;
+                  int? providerBooking;
+                  int? biddingStatus;
+                  try {
+                    providerBooking = splashController.configModel.content?.directProviderBooking;
+                    biddingStatus = splashController.configModel.content?.biddingStatus;
+                  } catch (_) {}
                   bool isLtr = Get.find<LocalizationController>().isLtr;
 
                   return ListView(
@@ -128,9 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ],
-                        if (splashController.configModel.content?.directProviderBooking == 1)
+                        if (providerBooking == 1)
                           const HomeRecommendProvider(height: 220,),
-                        if (splashController.configModel.content?.biddingStatus == 1 &&
+                        if (biddingStatus == 1 &&
                             (serviceController.allService?.isNotEmpty ?? false))
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeLarge),

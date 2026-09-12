@@ -17,27 +17,22 @@ class ServiceWidgetVertical extends StatelessWidget {
     num lowestPrice = 0.0;
 
     if(fromType == 'fromCampaign'){
-      if(service.variations != null){
-        lowestPrice = service.variations![0].price!;
-        for (var i = 0; i < service.variations!.length; i++) {
-          if (service.variations![i].price! < lowestPrice) {
-            lowestPrice = service.variations![i].price!;
-          }
+      final variations = service.variations ?? [];
+      for (final variation in variations) {
+        final price = variation.price ?? 0;
+        if (lowestPrice == 0.0 || price < lowestPrice) {
+          lowestPrice = price;
         }
       }
     }else{
-      if(service.variationsAppFormat != null){
-        if(service.variationsAppFormat!.zoneWiseVariations != null){
-          lowestPrice = service.variationsAppFormat!.zoneWiseVariations![0].price!;
-          for (var i = 0; i < service.variationsAppFormat!.zoneWiseVariations!.length; i++) {
-            if (service.variationsAppFormat!.zoneWiseVariations![i].price! < lowestPrice) {
-              lowestPrice = service.variationsAppFormat!.zoneWiseVariations![i].price!;
-            }
-          }
+      final variations = service.variationsAppFormat?.zoneWiseVariations ?? [];
+      for (final variation in variations) {
+        final price = variation.price ?? 0;
+        if (lowestPrice == 0.0 || price < lowestPrice) {
+          lowestPrice = price;
         }
       }
     }
-
 
     Discount discountModel =  PriceConverter.discountCalculation(service);
     return OnHover(
@@ -67,7 +62,7 @@ class ServiceWidgetVertical extends StatelessWidget {
                         ),
                       ),
 
-                      discountModel.discountAmount! > 0 ? Align(alignment: Alignment.topLeft,
+                      (discountModel.discountAmount ?? 0) > 0 ? Align(alignment: Alignment.topLeft,
                         child: DiscountTagWidget(
                           discountAmount: discountModel.discountAmount,
                           discountAmountType: discountModel.discountAmountType,
@@ -101,7 +96,7 @@ class ServiceWidgetVertical extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if(discountModel.discountAmount! > 0)
+                              if((discountModel.discountAmount ?? 0) > 0)
                                 Directionality(
                                   textDirection: TextDirection.ltr,
                                   child: Text(
@@ -112,13 +107,13 @@ class ServiceWidgetVertical extends StatelessWidget {
                                         decoration: TextDecoration.lineThrough,
                                         color: Theme.of(context).colorScheme.error),),
                                 ),
-                              discountModel.discountAmount! > 0?
+                              (discountModel.discountAmount ?? 0) > 0?
                               Directionality(
                                 textDirection: TextDirection.ltr,
                                 child: Text(
                                   PriceConverter.convertPrice(
                                       lowestPrice.toDouble(),
-                                      discount: discountModel.discountAmount!.toDouble(),
+                                      discount: (discountModel.discountAmount ?? 0).toDouble(),
                                       discountType: discountModel.discountAmountType),
                                   style: robotoMedium.copyWith(
                                       fontSize: Dimensions.fontSizeDefault,

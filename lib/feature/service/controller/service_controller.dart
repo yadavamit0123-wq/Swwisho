@@ -60,7 +60,7 @@ class ServiceController extends GetxController implements GetxService {
   int get cartIndex => _cartIndex;
 
   String? _fromPage;
-  String? get fromPage => _fromPage!;
+  String? get fromPage => _fromPage;
 
   final List<double> _lowestPriceList = [];
   List<double> get lowestPriceList => _lowestPriceList;
@@ -112,7 +112,13 @@ class ServiceController extends GetxController implements GetxService {
           fetchFromLocal: ()=>  serviceRepo.getAllServiceList<CacheResponseData>( source: DataSourceEnum.local),
           fetchFromClient: ()=>  serviceRepo.getAllServiceList(source: DataSourceEnum.client),
           onResponse: (data, source) {
-            _serviceContent = ServiceModel.fromJson(data).content;
+            try {
+              if (data is Map) {
+                _serviceContent = ServiceModel.fromJson(Map<String, dynamic>.from(data)).content;
+              }
+            } catch (_) {
+              _serviceContent = null;
+            }
             _allService = [];
             _allService!.addAll(_serviceContent?.serviceList ?? []);
             update();
@@ -148,10 +154,13 @@ class ServiceController extends GetxController implements GetxService {
           fetchFromLocal: ()=> serviceRepo.getPopularServiceList<CacheResponseData>( source: DataSourceEnum.local),
           fetchFromClient: ()=> serviceRepo.getPopularServiceList(source: DataSourceEnum.client),
           onResponse: (data, source) {
-            _popularBasedServiceContent = ServiceModel.fromJson(data).content;
+            try {
+              _popularBasedServiceContent = ServiceModel.fromJson(data).content;
+            } catch (_) {
+              _popularBasedServiceContent = null;
+            }
             _popularServiceList = [];
-            _popularServiceList!.addAll(_popularBasedServiceContent!.serviceList!);
-
+            _popularServiceList!.addAll(_popularBasedServiceContent?.serviceList ?? []);
             update();
           },
         );
@@ -186,9 +195,13 @@ class ServiceController extends GetxController implements GetxService {
           fetchFromLocal: ()=> serviceRepo.getTrendingServiceList<CacheResponseData>( source: DataSourceEnum.local),
           fetchFromClient: ()=> serviceRepo.getTrendingServiceList(source: DataSourceEnum.client),
           onResponse: (data, source) {
-            _trendingServiceContent = ServiceModel.fromJson(data).content;
+            try {
+              _trendingServiceContent = ServiceModel.fromJson(data).content;
+            } catch (_) {
+              _trendingServiceContent = null;
+            }
             _trendingServiceList = [];
-            _trendingServiceList!.addAll(_trendingServiceContent!.serviceList!);
+            _trendingServiceList!.addAll(_trendingServiceContent?.serviceList ?? []);
 
             update();
           },
@@ -202,7 +215,7 @@ class ServiceController extends GetxController implements GetxService {
           }
           _trendingServiceContent = ServiceModel.fromJson(response.response).content;
           if(_trendingServiceList != null && offset != 1){
-            _trendingServiceList!.addAll(_trendingServiceContent!.serviceList!);
+            _trendingServiceList!.addAll(_trendingServiceContent?.serviceList ?? []);
           }
         } else {
           ApiChecker.checkApi(response.response);
@@ -221,9 +234,13 @@ class ServiceController extends GetxController implements GetxService {
          fetchFromLocal: ()=> serviceRepo.getRecommendedServiceList<CacheResponseData>( source: DataSourceEnum.local),
          fetchFromClient: ()=> serviceRepo.getRecommendedServiceList(source: DataSourceEnum.client),
          onResponse: (data, source) {
-           _recommendedServiceContent = ServiceModel.fromJson(data).content;
+           try {
+             _recommendedServiceContent = ServiceModel.fromJson(data).content;
+           } catch (_) {
+             _recommendedServiceContent = null;
+           }
            _recommendedServiceList = [];
-           _recommendedServiceList!.addAll( _recommendedServiceContent!.serviceList!);
+           _recommendedServiceList!.addAll(_recommendedServiceContent?.serviceList ?? []);
            update();
          },
        );
@@ -235,7 +252,7 @@ class ServiceController extends GetxController implements GetxService {
          }
          _recommendedServiceContent = ServiceModel.fromJson(response.response).content;
          if(_recommendedServiceList != null && offset != 1){
-           _recommendedServiceList!.addAll( _recommendedServiceContent!.serviceList!);
+           _recommendedServiceList!.addAll(_recommendedServiceContent?.serviceList ?? []);
          }
        } else {
          ApiChecker.checkApi(response.response);
@@ -253,9 +270,13 @@ class ServiceController extends GetxController implements GetxService {
           fetchFromLocal: ()=> serviceRepo.getRecentlyViewedServiceList<CacheResponseData>( source: DataSourceEnum.local),
           fetchFromClient: ()=> serviceRepo.getRecentlyViewedServiceList(source: DataSourceEnum.client),
           onResponse: (data, source) {
-            _recentlyViewServiceContent = ServiceModel.fromJson(data).content;
+            try {
+              _recentlyViewServiceContent = ServiceModel.fromJson(data).content;
+            } catch (_) {
+              _recentlyViewServiceContent = null;
+            }
             _recentlyViewServiceList = [];
-            _recentlyViewServiceList!.addAll(_recentlyViewServiceContent!.serviceList!);
+            _recentlyViewServiceList!.addAll(_recentlyViewServiceContent?.serviceList ?? []);
             update();
           },
         );
@@ -267,7 +288,7 @@ class ServiceController extends GetxController implements GetxService {
           }
           _recentlyViewServiceContent = ServiceModel.fromJson(response.response).content;
           if(_recentlyViewServiceList != null && offset != 1){
-            _recentlyViewServiceList!.addAll(_recentlyViewServiceContent!.serviceList!);
+            _recentlyViewServiceList!.addAll(_recentlyViewServiceContent?.serviceList ?? []);
           }
         }
         update();

@@ -46,20 +46,23 @@ class FeatheredCategoryContent {
         this.total});
 
   FeatheredCategoryContent.fromJson(Map<String, dynamic> json) {
-    currentPage = json['current_page'];
-    if (json['data'] != null) {
+    currentPage = int.tryParse(json['current_page']?.toString() ?? '');
+    if (json['data'] is List) {
       categoryList = <CategoryData>[];
-      json['data'].forEach((v) {
-        categoryList!.add(CategoryData.fromJson(v));
-      });
+      for (final v in json['data']) {
+        try {
+          if (v is Map) {
+            categoryList!.add(CategoryData.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    firstPageUrl = json['first_page_url'];
-    from = json['from'];
-    lastPage = json['last_page'];
-    path = json['path'];
-
-    to = json['to'];
-    total = json['total'];
+    firstPageUrl = json['first_page_url']?.toString();
+    from = int.tryParse(json['from']?.toString() ?? '');
+    lastPage = int.tryParse(json['last_page']?.toString() ?? '');
+    path = json['path']?.toString();
+    to = int.tryParse(json['to']?.toString() ?? '');
+    total = int.tryParse(json['total']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -111,22 +114,26 @@ class CategoryData {
         this.campaignDiscount});
 
   CategoryData.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    parentId = json['parent_id'];
-    name = json['name'];
-    image = json['image'];
-    imageFullPath = json['image_full_path'];
-    position = json['position'];
-    description = json['description'];
-    isActive = json['is_active'];
-    isFeatured = int.tryParse(json['is_featured'].toString());
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    if (json['services_by_category'] != null) {
+    id = json['id']?.toString();
+    parentId = json['parent_id']?.toString();
+    name = json['name']?.toString();
+    image = json['image']?.toString();
+    imageFullPath = json['image_full_path']?.toString();
+    position = int.tryParse(json['position']?.toString() ?? '');
+    description = json['description']?.toString();
+    isActive = int.tryParse(json['is_active']?.toString() ?? '');
+    isFeatured = int.tryParse(json['is_featured']?.toString() ?? '');
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    if (json['services_by_category'] is List) {
       servicesByCategory = <Service>[];
-      json['services_by_category'].forEach((v) {
-        servicesByCategory!.add(Service.fromJson(v));
-      });
+      for (final v in json['services_by_category']) {
+        try {
+          if (v is Map) {
+            servicesByCategory!.add(Service.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
   }
 

@@ -11,7 +11,13 @@ class ServiceNotAvailableScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(Images.notAvailableIcon, width:  90.0, height: 90.0, color: Colors.grey ),
+          Image.asset(
+            Images.notAvailableIcon,
+            width:  90.0,
+            height: 90.0,
+            color: Colors.grey,
+            errorBuilder: (_, __, ___) => const Icon(Icons.location_off, size: 90, color: Colors.grey),
+          ),
           const SizedBox(height: Dimensions.paddingSizeLarge),
 
           Text(fromPage == "search_page"? "there_are_no_services_related_to_your_search".tr : "services_are_not_available".tr,
