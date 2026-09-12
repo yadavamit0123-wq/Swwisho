@@ -1,6 +1,53 @@
 import 'package:demandium/utils/core_export.dart';
 import 'package:get/get.dart';
 
+class HomeSearchBar extends StatelessWidget {
+  const HomeSearchBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Get.dialog(const SearchSuggestionDialog(), transitionCurve: Curves.easeIn),
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: Dimensions.paddingSizeDefault,
+          right: Dimensions.paddingSizeDefault,
+          top: Dimensions.paddingSizeExtraSmall,
+        ),
+        child: Container(
+          padding: EdgeInsets.only(
+            left: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeDefault : 0,
+            right: Get.find<LocalizationController>().isLtr ? 0 : Dimensions.paddingSizeDefault,
+          ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge),
+            color: Theme.of(context).cardColor,
+          ),
+          child: Row(children: [
+            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
+            Text('search_services'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
+            const Spacer(),
+            Container(
+              height: 45,
+              width: 45,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
+              child: Padding(
+                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall + 3),
+                child: Image.asset(Images.searchIcon, errorBuilder: (_, __, ___) => const Icon(Icons.search, color: Colors.white, size: 18)),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 class HomeSearchWidget extends StatelessWidget {
   const HomeSearchWidget({super.key}) ;
 

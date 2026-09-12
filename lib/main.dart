@@ -11,6 +11,9 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterL
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return const SizedBox.shrink();
+  };
   if(ResponsiveHelper.isMobilePhone()) {
     HttpOverrides.global = MyHttpOverrides();
     await FlutterDownloader.initialize(

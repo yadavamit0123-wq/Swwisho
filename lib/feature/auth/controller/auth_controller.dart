@@ -278,7 +278,7 @@ class AuthController extends GetxController implements GetxService {
   Future<ResponseModel?> sendVerificationCode({required String identity, required String identityType,required  SendOtpType type, int checkUser = 1, String fromPage = ""}) async {
     ResponseModel? responseModel;
     if(type == SendOtpType.firebase){
-       _sendOtpForFirebaseVerification(identity, identityType, fromPage);
+       _sendOtpForFirebaseVerification(identity, identityType, fromPage, checkUser);
     } else if(type == SendOtpType.verification){
       responseModel = await _sendOtpForVerificationScreen(identity: identity, identityType: identityType, checkUser: checkUser);
     }else{
@@ -330,38 +330,56 @@ class AuthController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> _sendOtpForFirebaseVerification(String identity, String identityType, String fromPage ) async {
+  Future<void> _sendOtpForFirebaseVerification(String identity, String identityType, String fromPage, int checkUser) async {
     _isLoading = true;
     update();
 
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: identity,
-      verificationCompleted: (PhoneAuthCredential credential) {},
-      verificationFailed: (FirebaseAuthException e) {
-        _isLoading = false;
-        update();
-        if(fromPage == "profile"){
+    Future<void> fallbackToServerOtp() async {
+      final fallback = await _sendOtpForVerificationScreen(
+        identity: identity,
+        identityType: identityType,
+        checkUser: checkUser,
+      );
+      if (fallback.isSuccess == true) {
+        if (fromPage == "profile") {
           Get.back();
         }
-        if(e.code == 'invalid-phone-number') {
-          customSnackBar('please_submit_a_valid_phone_number', type: ToasterMessageType.info);
+        Get.toNamed(RouteHelper.getVerificationRoute(
+          identity: identity,
+          identityType: identityType,
+          fromPage: fromPage == "forget-password" ? "forget-password" : "otp-login",
+        ));
+      } else {
+        customSnackBar(fallback.message.toString().capitalizeFirst);
+      }
+    }
 
-        }else{
-          customSnackBar('${e.message}'.replaceAll('_', ' ').capitalizeFirst);
-        }
-
-      },
-      codeSent: (String vId, int? resendToken) {
-        _isLoading = false;
-        update();
-        if(fromPage == "profile"){
-          Get.back();
-        }
-        Get.toNamed(RouteHelper.getVerificationRoute(identity:identity, identityType : identityType, fromPage:  fromPage == "forget-password" ? "forget-password" : "firebase-otp", firebaseSession: vId));
-
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-    );
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: identity,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e) async {
+          _isLoading = false;
+          update();
+          if (e.code == 'invalid-phone-number') {
+            customSnackBar('please_submit_a_valid_phone_number', type: ToasterMessageType.info);
+            return;
+          }
+          await fallbackToServerOtp();
+        },
+        codeSent: (String vId, int? resendToken) {
+          _isLoading = false;
+          update();
+          if(fromPage == "profile"){
+            Get.back();
+          }
+          Get.toNamed(RouteHelper.getVerificationRoute(identity:identity, identityType : identityType, fromPage:  fromPage == "forget-password" ? "forget-password" : "firebase-otp", firebaseSession: vId));
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+    } catch (_) {
+      await fallbackToServerOtp();
+    }
 
   }
 
