@@ -8,7 +8,7 @@ class CategoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetBuilder<CategoryController>(builder: (categoryController) {
 
-      return categoryController.categoryList != null && categoryController.categoryList!.isEmpty ? const SizedBox() :
+      return categoryController.categoryList != null && categoryController.categoryList!.isEmpty ? const SizedBox(height: 8) :
       categoryController.categoryList != null ? Center(
         child: SizedBox(width: Dimensions.webMaxWidth,
           child: Padding(padding: const EdgeInsets.symmetric( vertical:Dimensions.paddingSizeDefault),

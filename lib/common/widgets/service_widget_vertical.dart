@@ -91,7 +91,7 @@ class ServiceWidgetVertical extends StatelessWidget {
                             'starts_from'.tr,
                             style: robotoRegular.copyWith(
                                 fontSize: Dimensions.fontSizeSmall,
-                                color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .5)),
+                                color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .5)),
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

@@ -33,7 +33,7 @@ class CategoryController extends GetxController implements GetxService {
   Future<void> getCategoryList(bool reload ) async {
 
     if(_categoryList == null || reload){
-      DataSyncHelper.fetchAndSyncData(
+      await DataSyncHelper.fetchAndSyncData(
         fetchFromLocal: ()=> categoryRepo.getCategoryList<CacheResponseData>( source: DataSourceEnum.local),
         fetchFromClient: ()=> categoryRepo.getCategoryList(source: DataSourceEnum.client),
         onResponse: (data, source) {

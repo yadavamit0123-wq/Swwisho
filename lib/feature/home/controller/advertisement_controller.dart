@@ -25,11 +25,25 @@ class AdvertisementController extends GetxController implements GetxService {
         fetchFromLocal: ()=> advertisementRepo.getAdvertisementList<CacheResponseData>( source: DataSourceEnum.local),
         fetchFromClient: ()=> advertisementRepo.getAdvertisementList(source: DataSourceEnum.client),
         onResponse: (data, source) {
-
           _advertisementList = [];
-          data['content']['data'].forEach((banner){
-            _advertisementList!.add(Advertisement.fromJson(banner));
-          });
+          try {
+            dynamic list;
+            if (data is Map) {
+              final content = data['content'];
+              if (content is Map) {
+                list = content['data'];
+              }
+            }
+            if (list is List) {
+              for (final banner in list) {
+                try {
+                  if (banner is Map) {
+                    _advertisementList!.add(Advertisement.fromJson(Map<String, dynamic>.from(banner)));
+                  }
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
 
           if(_advertisementList !=null && _advertisementList!.isNotEmpty && _advertisementList![0].type == "video_promotion"){
             autoPlay = false;

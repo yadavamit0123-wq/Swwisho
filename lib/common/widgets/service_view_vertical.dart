@@ -31,7 +31,6 @@ class ServiceViewVertical extends GetView<ServiceController> {
         children: [
           isNull == false &&  length != 0 ?
           GridView.builder(
-            key: UniqueKey(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisSpacing: Dimensions.paddingSizeDefault,
               mainAxisSpacing:  Dimensions.paddingSizeDefault,
@@ -54,7 +53,6 @@ class ServiceViewVertical extends GetView<ServiceController> {
               ) : ServiceNotAvailableScreen(fromPage: fromPage ?? "",),
             ),
           ) : GridView.builder(
-            key: UniqueKey(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisSpacing: Dimensions.paddingSizeDefault,
               mainAxisSpacing:  Dimensions.paddingSizeDefault,

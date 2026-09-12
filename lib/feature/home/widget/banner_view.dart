@@ -10,7 +10,7 @@ class BannerView extends StatelessWidget {
     return GetBuilder<BannerController>(
       builder: (bannerController) {
         return (bannerController.banners != null && bannerController.banners!.isEmpty) ?
-        const SizedBox() :
+        const SizedBox(height: 8) :
         Container(width: MediaQuery.of(context).size.width,
           height: ResponsiveHelper.isTab(context) || MediaQuery.of(context).size.width > 450 ? 350 : MediaQuery.of(context).size.width * 0.42,
           padding: const EdgeInsets.only(top: Dimensions.paddingSizeDefault),

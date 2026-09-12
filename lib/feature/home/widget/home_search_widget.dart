@@ -6,43 +6,52 @@ class HomeSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String label = 'Search services';
+    try {
+      label = 'search_services'.tr;
+    } catch (_) {}
+
     return InkWell(
-      onTap: () => Get.dialog(const SearchSuggestionDialog(), transitionCurve: Curves.easeIn),
-      child: Padding(
-        padding: const EdgeInsets.only(
-          left: Dimensions.paddingSizeDefault,
-          right: Dimensions.paddingSizeDefault,
-          top: Dimensions.paddingSizeExtraSmall,
+      onTap: () {
+        try {
+          Get.dialog(const SearchSuggestionDialog(), transitionCurve: Curves.easeIn);
+        } catch (_) {}
+      },
+      child: Container(
+        height: 52,
+        margin: const EdgeInsets.fromLTRB(
+          Dimensions.paddingSizeDefault,
+          Dimensions.paddingSizeExtraSmall,
+          Dimensions.paddingSizeDefault,
+          Dimensions.paddingSizeSmall,
         ),
-        child: Container(
-          padding: EdgeInsets.only(
-            left: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeDefault : 0,
-            right: Get.find<LocalizationController>().isLtr ? 0 : Dimensions.paddingSizeDefault,
-          ),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge),
-            color: Theme.of(context).hintColor.withValues(alpha: 0.08),
-            border: Border.all(color: Theme.of(context).hintColor.withValues(alpha: 0.25)),
-          ),
-          child: Row(children: [
-            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-            Text('search_services'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
-            const Spacer(),
-            Container(
-              height: 45,
-              width: 45,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle,
-              ),
-              margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-              child: Padding(
-                padding: const EdgeInsets.all(Dimensions.paddingSizeSmall + 3),
-                child: Image.asset(Images.searchIcon, errorBuilder: (_, __, ___) => const Icon(Icons.search, color: Colors.white, size: 18)),
+        padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2F4F7),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: const Color(0xFFD0D5DD)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFF667085), fontSize: 14),
               ),
             ),
-          ]),
+            Container(
+              height: 40,
+              width: 40,
+              margin: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1976D2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.search, color: Colors.white, size: 20),
+            ),
+          ],
         ),
       ),
     );
@@ -50,58 +59,24 @@ class HomeSearchBar extends StatelessWidget {
 }
 
 class HomeSearchWidget extends StatelessWidget {
-  const HomeSearchWidget({super.key}) ;
+  const HomeSearchWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return  SliverPersistentHeader(
+    return SliverPersistentHeader(
       pinned: true,
-      delegate: SliverDelegate(extentSize: 60,
-        child: InkWell(
-
-          onTap: () => Get.dialog(const SearchSuggestionDialog(), transitionCurve: Curves.easeIn),
-
-          child: Padding(padding: const EdgeInsets.only(left: Dimensions.paddingSizeDefault, right: Dimensions.paddingSizeDefault, top: Dimensions.paddingSizeExtraSmall,),
-            child: Container(
-              padding: EdgeInsets.only(
-                left: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeDefault : 0,
-                right:   Get.find<LocalizationController>().isLtr ? 0 : Dimensions.paddingSizeDefault,
-              ),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                boxShadow: Get.find<ThemeController>().darkTheme ? null : searchBoxShadow,
-                borderRadius: BorderRadius.circular(Dimensions.paddingSizeExtraLarge),
-                color: Theme.of(context).cardColor,
-              ),
-              child: Row( children: [
-
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall,),
-                Text('search_services'.tr, style: robotoRegular.copyWith(color: Theme.of(context).hintColor)),
-                const Spacer(),
-                Container(height: 45, width: 45,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,shape: BoxShape.circle
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
-                  child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeSmall + 3),
-                    child: Image.asset(Images.searchIcon),
-                  ),
-                ),
-
-              ]),
-            ),
-          ),
-        ),
+      delegate: SliverDelegate(
+        extentSize: 60,
+        child: const HomeSearchBar(),
       ),
     );
   }
 }
 
-
 class SliverDelegate extends SliverPersistentHeaderDelegate {
   Widget? child;
   double? extentSize;
-  SliverDelegate({@required this.child,@required this.extentSize});
+  SliverDelegate({@required this.child, @required this.extentSize});
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child!;

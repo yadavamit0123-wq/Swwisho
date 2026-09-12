@@ -17,7 +17,7 @@ class BannerController extends GetxController implements GetxService {
 
 
     if(_banners == null || reload){
-      DataSyncHelper.fetchAndSyncData(
+      await DataSyncHelper.fetchAndSyncData(
         fetchFromLocal: ()=> bannerRepo.getBannerList<CacheResponseData>( source: DataSourceEnum.local),
         fetchFromClient: ()=> bannerRepo.getBannerList(source: DataSourceEnum.client),
         onResponse: (data, source) {
