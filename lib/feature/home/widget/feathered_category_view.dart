@@ -14,15 +14,20 @@ class _FeatheredCategoryViewState extends State<FeatheredCategoryView> {
   Widget build(BuildContext context) {
     return GetBuilder<ServiceController>(builder: (serviceController){
 
-      return serviceController.categoryList == null ? const SizedBox() :
+      final categories = serviceController.categoryList;
+      if (categories == null || categories.isEmpty) {
+        return const SizedBox();
+      }
 
-       SizedBox(
-        height: serviceController.categoryList!.length * 330,
+      return SizedBox(
+        height: categories.length * 330,
         child: ListView.builder(itemBuilder: (context,categoryIndex){
 
-          int serviceItemCount;
-          serviceItemCount = serviceController.categoryList![categoryIndex].servicesByCategory!.length > 5 ? 5
-                : serviceController.categoryList![categoryIndex].servicesByCategory!.length;
+          final services = categories[categoryIndex].servicesByCategory ?? [];
+          if (services.isEmpty) {
+            return const SizedBox();
+          }
+          final serviceItemCount = services.length > 5 ? 5 : services.length;
 
           return  Container(
             decoration: BoxDecoration(
@@ -42,9 +47,9 @@ class _FeatheredCategoryViewState extends State<FeatheredCategoryView> {
                   ),
                   child: TitleWidget(
                     textDecoration: TextDecoration.underline,
-                    title: serviceController.categoryList?[categoryIndex].name??"",
+                    title: categories[categoryIndex].name??"",
                     onTap: () =>  Get.toNamed(RouteHelper.getFeatheredCategoryService(
-                        serviceController.categoryList?[categoryIndex].name??"", serviceController.categoryList?[categoryIndex].id ?? ""),
+                        categories[categoryIndex].name??"", categories[categoryIndex].id ?? ""),
                     ),
                   ),
                 ),
@@ -62,7 +67,7 @@ class _FeatheredCategoryViewState extends State<FeatheredCategoryView> {
                       return Padding(padding: const EdgeInsets.only(right: Dimensions.paddingSizeSmall + 2),
                         child: SizedBox(
                            width: ResponsiveHelper.isTab(context) ? 250 : Get.width / 2.30,
-                            child: ServiceWidgetVertical(service: serviceController.categoryList![categoryIndex].servicesByCategory![index],
+                            child: ServiceWidgetVertical(service: services[index],
                           fromType: '',
                         )
                         ),

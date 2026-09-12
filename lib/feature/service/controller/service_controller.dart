@@ -291,13 +291,14 @@ class ServiceController extends GetxController implements GetxService {
         onResponse: (data, source) {
           _featheredCategoryContent = FeatheredCategoryModel.fromJson(data).content;
 
-          if(_featheredCategoryContent!.categoryList!=null || _featheredCategoryContent!.categoryList!.isNotEmpty){
+          final categoryList = _featheredCategoryContent?.categoryList;
+          if(categoryList != null && categoryList.isNotEmpty){
             _categoryList =[];
-            _featheredCategoryContent?.categoryList?.forEach((element) {
-              if(element.servicesByCategory!=null && element.servicesByCategory!.isNotEmpty){
+            for (final element in categoryList) {
+              if(element.servicesByCategory != null && element.servicesByCategory!.isNotEmpty){
                 _categoryList!.add(element);
               }
-            });
+            }
           }
           update();
         },

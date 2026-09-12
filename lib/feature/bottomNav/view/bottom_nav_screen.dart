@@ -167,27 +167,25 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
     });
   }
 
-  _bottomNavigationView(AddressModel? previousAddress, bool showServiceNotAvailableDialog) {
+  Widget _bottomNavigationView(AddressModel? previousAddress, bool showServiceNotAvailableDialog) {
     PriceConverter.getCurrency();
     switch (Get.find<BottomNavController>().currentPage) {
       case BnbItem.homePage:
         return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
       case BnbItem.bookings:
         if (!Get.find<AuthController>().isLoggedIn()) {
-          break;
-        } else {
-          return const BookingListScreen();
+          return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
         }
+        return const BookingListScreen();
       case BnbItem.cart:
         if (!Get.find<AuthController>().isLoggedIn()) {
-          break;
-        } else {
-          return Get.toNamed(RouteHelper.getCartRoute());
+          return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
         }
+        return const CartScreen(fromNav: true);
       case BnbItem.offers:
         return const OfferScreen();
       case BnbItem.more:
-        break;
+        return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
     }
   }
 }

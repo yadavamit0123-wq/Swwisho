@@ -7,10 +7,7 @@ import '../../utils/appp_upgrade_wrapper.dart';
 
 class HomeScreen extends StatefulWidget {
   static Future<void> loadData(bool reload, {int availableServiceCount = 1}) async {
-
-    if(availableServiceCount==0){
-      Get.find<BannerController>().getBannerList(reload);
-    }else{
+    try {
       await Future.wait([
         Get.find<ServiceController>().getRecommendedSearchList(),
         Get.find<ServiceController>().getAllServiceList(1,reload),
@@ -28,10 +25,8 @@ class HomeScreen extends StatefulWidget {
         if(Get.find<AuthController>().isLoggedIn())  Get.find<AuthController>().updateToken(),
         if(Get.find<AuthController>().isLoggedIn())  Get.find<ServiceController>().getRecentlyViewedServiceList(1,reload),
       ]);
-
       Get.find<BookingDetailsController>().manageDialog();
-
-    }
+    } catch (_) {}
   }
   final AddressModel? addressModel;
   final bool showServiceNotAvailableDialog;
@@ -56,9 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(Get.find<LocationController>().getUserAddress() !=null){
       availableServiceCount = Get.find<LocationController>().getUserAddress()?.availableServiceCountInZone ?? 1;
     }
-    if (Get.find<CategoryController>().categoryList == null && Get.find<ServiceController>().allService == null) {
-      HomeScreen.loadData(false, availableServiceCount: availableServiceCount);
-    }
+    HomeScreen.loadData(true, availableServiceCount: availableServiceCount);
 
     _previousAddress = widget.addressModel;
 
@@ -118,9 +111,17 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: GestureDetector(
             onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: GetBuilder<SplashController>(builder: (splashController){
+            child: GetBuilder<LocationController>(builder: (locationController){
+            return GetBuilder<SplashController>(builder: (splashController){
               return GetBuilder<ProviderBookingController>(builder: (providerController){
+                return GetBuilder<CategoryController>(builder: (categoryController){
                 return GetBuilder<ServiceController>(builder: (serviceController){
+
+                  availableServiceCount = locationController.getUserAddress()?.availableServiceCountInZone ?? availableServiceCount;
+                  final hasLoadedServices = serviceController.allService != null || categoryController.categoryList != null;
+                  final hasAnyService = (serviceController.allService?.isNotEmpty ?? false) ||
+                      (categoryController.categoryList?.isNotEmpty ?? false);
+                  final showHomeContent = availableServiceCount > 0 || !hasLoadedServices || hasAnyService;
 
                   bool isAvailableProvider = providerController.providerList != null && providerController.providerList!.isNotEmpty;
                   int ? providerBooking = splashController.configModel.content?.directProviderBooking;
@@ -144,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: Dimensions.webMaxWidth,
                                   child: Column(children: [
                                     const BannerView(),
-                                    availableServiceCount > 0 ? Column(children: [
+                                    showHomeContent ? Column(children: [
                                       const Padding(padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
                                         child: CategoryView(),
                                       ),
@@ -225,7 +226,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 });
+                });
               });
+            });
             })
           ),
         ),

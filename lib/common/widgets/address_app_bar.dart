@@ -28,7 +28,7 @@ class AddressAppBar extends StatelessWidget implements PreferredSizeWidget {
                 return Row(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.start, children: [
                   if(locationController.getUserAddress() != null) Flexible(
                     child: Text(
-                      locationController.getUserAddress()!.address!,
+                      locationController.getUserAddress()?.address ?? 'location'.tr,
                       style: robotoMedium.copyWith(color: Colors.white, fontSize: Dimensions.fontSizeSmall), maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

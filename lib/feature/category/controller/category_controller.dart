@@ -37,11 +37,17 @@ class CategoryController extends GetxController implements GetxService {
         fetchFromLocal: ()=> categoryRepo.getCategoryList<CacheResponseData>( source: DataSourceEnum.local),
         fetchFromClient: ()=> categoryRepo.getCategoryList(source: DataSourceEnum.client),
         onResponse: (data, source) {
-
           _categoryList = [];
-          data['content']['data'].forEach((category) {
-            _categoryList!.add(CategoryModel.fromJson(category));
-          });
+          try {
+            final list = data is Map ? data['content']?['data'] : null;
+            if (list is List) {
+              for (final category in list) {
+                try {
+                  _categoryList!.add(CategoryModel.fromJson(category));
+                } catch (_) {}
+              }
+            }
+          } catch (_) {}
           Get.find<AllSearchController>().insertCategoryCheckedList();
           update();
         },
