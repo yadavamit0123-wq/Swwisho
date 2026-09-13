@@ -35,7 +35,7 @@ class HomeScreen extends StatefulWidget {
       _safeLoad(() => Get.find<ServiceController>().getTrendingServiceList(1, reload)),
       _safeLoad(() => Get.find<AdvertisementController>().getAdvertisementList(reload)),
       _safeLoad(() => Get.find<CampaignController>().getCampaignList(reload)),
-      _safeLoad(() => Get.find<ServiceController>().getFeatheredCategoryList(reload)),
+      _safeLoad(() => Get.find<ServiceController>().getFeatherCategoryList(reload)),
       _safeLoad(() => Get.find<ProviderBookingController>().getProviderList(1, reload)),
       _safeLoad(() => Get.find<NearbyProviderController>().getProviderList(1, reload)),
       _safeLoad(() => Get.find<ServiceController>().getRecommendedSearchList()),
