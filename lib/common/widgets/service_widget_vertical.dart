@@ -34,7 +34,12 @@ class ServiceWidgetVertical extends StatelessWidget {
       }
     }
 
-    Discount discountModel =  PriceConverter.discountCalculation(service);
+    Discount discountModel;
+    try {
+      discountModel = PriceConverter.discountCalculation(service);
+    } catch (_) {
+      discountModel = Discount(discountAmount: 0, discountAmountType: 'amount');
+    }
     return OnHover(
       isItem: true,
       child: GetBuilder<ServiceController>(builder: (serviceController){
@@ -137,11 +142,14 @@ class ServiceWidgetVertical extends StatelessWidget {
               ),
             ),
             Positioned.fill(child: RippleButton(onTap: () {
-
+              final serviceId = service.id;
+              if (serviceId == null || serviceId.isEmpty) {
+                return;
+              }
               if(fromPage=="search_page"){
-                Get.toNamed(RouteHelper.getServiceRoute(service.id!,fromPage:"search_page"),);
+                Get.toNamed(RouteHelper.getServiceRoute(serviceId,fromPage:"search_page"),);
               }else{
-                Get.toNamed(RouteHelper.getServiceRoute(service.id!),);
+                Get.toNamed(RouteHelper.getServiceRoute(serviceId),);
               }
             }))
           ],),
@@ -173,7 +181,7 @@ class ServiceWidgetVertical extends StatelessWidget {
             alignment: Alignment.topRight,
             child: FavoriteIconWidget(
               value: service.isFavorite,
-              serviceId:  service.id!,
+              serviceId:  service.id,
               signInShakeKey: signInShakeKey,
             ),
           )

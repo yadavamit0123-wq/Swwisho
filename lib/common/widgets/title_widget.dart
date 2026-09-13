@@ -12,8 +12,8 @@ class TitleWidget extends StatelessWidget {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
 
       Flexible(
-        child: Text(title!.tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge,color: title=='recently_view_services'
-            ? Colors.white:Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .8),
+        child: Text((title ?? '').tr, style: robotoBold.copyWith(fontSize: Dimensions.fontSizeExtraLarge,color: title=='recently_view_services'
+            ? Colors.white: (Theme.of(context).textTheme.bodyLarge?.color ?? Theme.of(context).colorScheme.onSurface).withValues(alpha: .8),
         ),maxLines: 1,overflow: TextOverflow.ellipsis,),
       ),
       const SizedBox(width: Dimensions.paddingSizeSmall,),
@@ -22,7 +22,7 @@ class TitleWidget extends StatelessWidget {
         child: Text('see_all'.tr,
           style: robotoRegular.copyWith(
             decoration: textDecoration,
-            color:Get.isDarkMode ?Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .8):
+            color:Get.isDarkMode ?(Theme.of(context).textTheme.bodyLarge?.color ?? Theme.of(context).colorScheme.onSurface).withValues(alpha: .8):
             title=='recently_view_services'? Colors.white : Theme.of(context).colorScheme.primary,
             fontSize: Dimensions.fontSizeLarge,
           ),

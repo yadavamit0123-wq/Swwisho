@@ -71,7 +71,7 @@ class CategoryView extends StatelessWidget {
                               Expanded(
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 2),
-                                  child: Text(categoryController.categoryList![index].name!,
+                                  child: Text(categoryController.categoryList![index].name ?? '',
                                     style: robotoRegular.copyWith(
                                       fontSize: Dimensions.fontSizeSmall,
                                       color: hovered ? Theme.of(context).colorScheme.primary : Theme.of(context).textTheme.bodySmall?.color,
@@ -86,8 +86,13 @@ class CategoryView extends StatelessWidget {
                           ),
                         ),
                         Positioned.fill(child: RippleButton(onTap: (){
+                          final selected = categoryController.categoryList![index];
+                          final id = selected.id;
+                          if (id == null || id.isEmpty) {
+                            return;
+                          }
                           Get.toNamed(RouteHelper.getCategoryProductRoute(
-                            categoryController.categoryList![index].id!, categoryController.categoryList![index].name!,
+                            id, selected.name ?? '',
                             index.toString(),
                           ));
                         }))

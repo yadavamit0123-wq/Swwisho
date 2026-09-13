@@ -28,7 +28,13 @@ class BannerController extends GetxController implements GetxService {
               final content = data['content'];
               if (content is Map) {
                 list = content['data'];
+              } else if (content is List) {
+                list = content;
+              } else {
+                list = data['data'];
               }
+            } else if (data is List) {
+              list = data;
             }
             if (list is List) {
               for (final banner in list) {
