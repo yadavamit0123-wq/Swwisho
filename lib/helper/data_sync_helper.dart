@@ -26,7 +26,11 @@ class DataSyncHelper {
       final clientResponse = await fetchFromClient();
       if (clientResponse.isSuccess && clientResponse.response?.statusCode == 200) {
         try {
-          onResponse(clientResponse.response?.body, DataSourceEnum.client);
+          dynamic body = clientResponse.response?.body;
+          if (body is String) {
+            body = jsonDecode(body);
+          }
+          onResponse(body, DataSourceEnum.client);
         } catch (_) {}
       } else if (clientResponse.response?.statusCode != 429) {
         ApiChecker.checkApi(Response(

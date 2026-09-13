@@ -48,12 +48,15 @@ class AddressModel {
     address = json['address']?.toString();
     addressType = json['address_type']?.toString();
     addressLabel = json['address_label']?.toString();
-    latitude = json['lat']?.toString();
-    longitude = json['lon']?.toString();
+    latitude = (json['lat'] ?? json['latitude'])?.toString();
+    longitude = (json['lon'] ?? json['lng'] ?? json['longitude'])?.toString();
     city = json['city']?.toString();
     zipCode = json['zip_code']?.toString();
     country = json['country']?.toString();
-    zoneId = json['zone_id']?.toString();
+    zoneId = (json['zone_id'] ?? json['zoneId'] ?? json['zone_ids'])?.toString();
+    if (zoneId == 'null' || zoneId == '') {
+      zoneId = null;
+    }
     contactPersonName = json['contact_person_name']?.toString();
     contactPersonLabel = json['address_label']?.toString();
     street = json['street']?.toString();

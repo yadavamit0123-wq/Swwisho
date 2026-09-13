@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:demandium/utils/core_export.dart';
 import 'package:get/get.dart';
 
@@ -5,27 +7,88 @@ import '../../utils/appp_upgrade_wrapper.dart';
 
 
 class HomeScreen extends StatefulWidget {
+  static const String _mumbaiZoneId = 'a0eac7ed-41da-41fa-a119-e9369bba2c99';
+
   static Future<void> _safeLoad(Future<void> Function() task) async {
     try {
       await task();
     } catch (_) {}
   }
 
-  static void _applySavedZoneHeader() {
+  static String? _cleanZoneId(String? value) {
+    if (value == null) {
+      return null;
+    }
+    final zoneId = value.trim();
+    if (zoneId.isEmpty || zoneId == 'null' || zoneId == '[]') {
+      return null;
+    }
+    return zoneId;
+  }
+
+  static Future<String?> ensureZoneHeader() async {
+    AddressModel? address;
     try {
-      final address = Get.find<LocationController>().getUserAddress();
+      address = Get.find<LocationController>().getUserAddress();
+    } catch (_) {}
+
+    String? zoneId = _cleanZoneId(address?.zoneId);
+
+    if (zoneId == null) {
+      try {
+        final raw = Get.find<SharedPreferences>().getString(AppConstants.userAddress);
+        if (raw != null && raw.isNotEmpty) {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            zoneId = _cleanZoneId(
+              (decoded['zone_id'] ?? decoded['zoneId'] ?? decoded['zone_ids'])?.toString(),
+            );
+            address ??= AddressModel.fromJson(Map<String, dynamic>.from(decoded));
+            address.latitude ??= (decoded['lat'] ?? decoded['latitude'])?.toString();
+            address.longitude ??= (decoded['lon'] ?? decoded['lng'] ?? decoded['longitude'])?.toString();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (zoneId == null) {
+      final lat = address?.latitude;
+      final lng = address?.longitude;
+      if (lat != null && lng != null && lat.isNotEmpty && lng.isNotEmpty) {
+        try {
+          final zone = await Get.find<LocationController>().getZone(lat, lng, true, isLoading: true);
+          if (zone.isSuccess) {
+            zoneId = _cleanZoneId(zone.zoneIds);
+            if (zoneId != null && address != null) {
+              address.zoneId = zoneId;
+              try {
+                await Get.find<LocationController>().saveUserAddress(address);
+              } catch (_) {}
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (zoneId == null && (address?.address ?? '').toLowerCase().contains('mumbai')) {
+      zoneId = _mumbaiZoneId;
+    }
+
+    try {
       final prefs = Get.find<SharedPreferences>();
       Get.find<ApiClient>().updateHeader(
         prefs.getString(AppConstants.token),
-        address?.zoneId,
+        zoneId,
         prefs.getString(AppConstants.languageCode),
         prefs.getString(AppConstants.guestId),
       );
     } catch (_) {}
+
+    return zoneId;
   }
 
   static Future<void> loadData(bool reload, {int availableServiceCount = 1}) async {
-    _applySavedZoneHeader();
+    await ensureZoneHeader();
     await Future.wait([
       _safeLoad(() => Get.find<BannerController>().getBannerList(reload)),
       _safeLoad(() => Get.find<CategoryController>().getCategoryList(reload)),
@@ -61,6 +124,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController scrollController = ScrollController();
   final signInShakeKey = GlobalKey<CustomShakingWidgetState>();
 
+  bool _loading = true;
+  String? _error;
+  List<BannerModel> _banners = [];
+  List<CategoryModel> _categories = [];
+  List<Service> _popular = [];
+  List<Service> _services = [];
+
   @override
   void initState() {
     super.initState();
@@ -75,7 +145,119 @@ class _HomeScreenState extends State<HomeScreen> {
     if (savedCount != null && savedCount > 0) {
       availableServiceCount = savedCount;
     }
+    _loadHome();
     HomeScreen.loadData(true, availableServiceCount: availableServiceCount);
+  }
+
+  Map<String, dynamic>? _asMap(dynamic data) {
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    if (data is String && data.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is Map) {
+          return Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    final map = _asMap(data);
+    if (map == null) {
+      if (data is List) {
+        return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      return [];
+    }
+
+    dynamic list;
+    final content = map['content'];
+    if (content is Map) {
+      list = content['data'] ?? content['services'] ?? content['categories'];
+    } else if (content is List) {
+      list = content;
+    } else {
+      list = map['data'];
+    }
+
+    if (list is List) {
+      return list.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    }
+    return [];
+  }
+
+  Future<void> _loadHome() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
+    try {
+      await HomeScreen.ensureZoneHeader();
+      final api = Get.find<ApiClient>();
+      final responses = await Future.wait([
+        api.getData('${AppConstants.categoryUrl}&limit=100&offset=1'),
+        api.getData('${AppConstants.allServiceUri}?limit=20&offset=1'),
+        api.getData('${AppConstants.popularServiceUri}?limit=10&offset=1'),
+        api.getData(AppConstants.bannerUri),
+      ]);
+
+      final categories = <CategoryModel>[];
+      for (final item in _extractList(responses[0].body)) {
+        try {
+          categories.add(CategoryModel.fromJson(item));
+        } catch (_) {}
+      }
+
+      final services = <Service>[];
+      for (final item in _extractList(responses[1].body)) {
+        try {
+          services.add(Service.fromJson(item));
+        } catch (_) {}
+      }
+
+      final popular = <Service>[];
+      for (final item in _extractList(responses[2].body)) {
+        try {
+          popular.add(Service.fromJson(item));
+        } catch (_) {}
+      }
+
+      final banners = <BannerModel>[];
+      for (final item in _extractList(responses[3].body)) {
+        try {
+          banners.add(BannerModel.fromJson(item));
+        } catch (_) {}
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _categories = categories;
+        _services = services;
+        _popular = popular;
+        _banners = banners;
+        _loading = false;
+        if (categories.isEmpty && services.isEmpty && popular.isEmpty) {
+          _error = 'Services load nahi ho paayi. Pull to refresh karke try karein.';
+        }
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _error = 'Home load nahi ho paayi. Pull to refresh karke try karein.';
+      });
+    }
   }
 
   homeAppBar({GlobalKey<CustomShakingWidgetState>? signInShakeKey}) {
@@ -90,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: homeAppBar(signInShakeKey: signInShakeKey),
       endDrawer: ResponsiveHelper.isDesktop(context) ? const MenuDrawer() : null,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF5F6F8),
       body: ResponsiveHelper.isDesktop(context)
           ? WebHomeScreen(
               scrollController: scrollController,
@@ -103,16 +285,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   const HomeSearchBar(),
                   Expanded(
                     child: RefreshIndicator(
-                      onRefresh: () => HomeScreen.loadData(true, availableServiceCount: 1),
+                      onRefresh: _loadHome,
                       child: ListView(
                         controller: scrollController,
                         physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                         padding: const EdgeInsets.only(bottom: 90),
-                        children: const [
-                          _HomeBannerSection(),
-                          _HomeCategorySection(),
-                          _HomePopularSection(),
-                          _HomeAllServiceSection(),
+                        children: [
+                          if (_loading)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 48),
+                              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            ),
+                          if (!_loading && _error != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _error!,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Color(0xFF667085)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextButton(
+                                    onPressed: _loadHome,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (!_loading) ...[
+                            _HomeBannerStrip(banners: _banners),
+                            _HomeCategoryGrid(categories: _categories),
+                            _HomeServiceGrid(title: 'Popular Services', services: _popular),
+                            _HomeServiceGrid(title: 'All Services', services: _services),
+                          ],
                         ],
                       ),
                     ),
@@ -124,210 +331,120 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _HomeBannerSection extends StatelessWidget {
-  const _HomeBannerSection();
+class _HomeBannerStrip extends StatelessWidget {
+  final List<BannerModel> banners;
+  const _HomeBannerStrip({required this.banners});
 
   @override
   Widget build(BuildContext context) {
-    try {
-      if (!Get.isRegistered<BannerController>()) {
-        return const SizedBox.shrink();
-      }
-      return GetBuilder<BannerController>(builder: (controller) {
-        try {
-          final banners = controller.banners;
-          if (banners == null) {
-            return Container(
-              height: 150,
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(12),
-              ),
-            );
-          }
-          if (banners.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return SizedBox(
-            height: 160,
-            child: PageView.builder(
-              itemCount: banners.length,
-              itemBuilder: (context, index) {
-                final image = banners[index].bannerImageFullPath ?? '';
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: CustomImage(image: image, fit: BoxFit.cover),
-                  ),
-                );
-              },
-            ),
-          );
-        } catch (_) {
-          return const SizedBox.shrink();
-        }
-      });
-    } catch (_) {
+    if (banners.isEmpty) {
       return const SizedBox.shrink();
     }
-  }
-}
-
-class _HomeCategorySection extends StatelessWidget {
-  const _HomeCategorySection();
-
-  @override
-  Widget build(BuildContext context) {
-    try {
-      if (!Get.isRegistered<CategoryController>()) {
-        return const SizedBox.shrink();
-      }
-      return GetBuilder<CategoryController>(builder: (controller) {
-        try {
-          final categories = controller.categoryList;
-          if (categories == null) {
-            return const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-            );
-          }
-          if (categories.isEmpty) {
-            return const SizedBox.shrink();
-          }
+    return SizedBox(
+      height: 160,
+      child: PageView.builder(
+        itemCount: banners.length,
+        itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Categories',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: categories.length > 8 ? 8 : categories.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    mainAxisExtent: 96,
-                  ),
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return InkWell(
-                      onTap: () {
-                        final id = category.id;
-                        if (id == null || id.isEmpty) {
-                          return;
-                        }
-                        Get.toNamed(RouteHelper.getCategoryProductRoute(
-                          id,
-                          category.name ?? '',
-                          index.toString(),
-                        ));
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          children: [
-                            SizedBox(
-                              height: 42,
-                              width: 42,
-                              child: CustomImage(
-                                image: category.imageFullPath ?? '',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Expanded(
-                              child: Text(
-                                category.name ?? '',
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: CustomImage(
+                image: banners[index].bannerImageFullPath ?? '',
+                fit: BoxFit.cover,
+              ),
             ),
           );
-        } catch (_) {
-          return const SizedBox.shrink();
-        }
-      });
-    } catch (_) {
-      return const SizedBox.shrink();
-    }
+        },
+      ),
+    );
   }
 }
 
-class _HomePopularSection extends StatelessWidget {
-  const _HomePopularSection();
+class _HomeCategoryGrid extends StatelessWidget {
+  final List<CategoryModel> categories;
+  const _HomeCategoryGrid({required this.categories});
 
   @override
   Widget build(BuildContext context) {
-    try {
-      if (!Get.isRegistered<ServiceController>()) {
-        return const SizedBox.shrink();
-      }
-      return GetBuilder<ServiceController>(builder: (controller) {
-        try {
-          return _HomeServiceGrid(
-            title: 'Popular Services',
-            services: controller.popularServiceList,
-          );
-        } catch (_) {
-          return const SizedBox.shrink();
-        }
-      });
-    } catch (_) {
+    if (categories.isEmpty) {
       return const SizedBox.shrink();
     }
-  }
-}
-
-class _HomeAllServiceSection extends StatelessWidget {
-  const _HomeAllServiceSection();
-
-  @override
-  Widget build(BuildContext context) {
-    try {
-      if (!Get.isRegistered<ServiceController>()) {
-        return const SizedBox.shrink();
-      }
-      return GetBuilder<ServiceController>(builder: (controller) {
-        try {
-          return _HomeServiceGrid(
-            title: 'All Services',
-            services: controller.allService,
-          );
-        } catch (_) {
-          return const SizedBox.shrink();
-        }
-      });
-    } catch (_) {
-      return const SizedBox.shrink();
-    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Categories',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: categories.length > 8 ? 8 : categories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              mainAxisExtent: 96,
+            ),
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return InkWell(
+                onTap: () {
+                  final id = category.id;
+                  if (id == null || id.isEmpty) {
+                    return;
+                  }
+                  Get.toNamed(RouteHelper.getCategoryProductRoute(
+                    id,
+                    category.name ?? '',
+                    index.toString(),
+                  ));
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 42,
+                        width: 42,
+                        child: CustomImage(
+                          image: category.imageFullPath ?? '',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: Text(
+                          category.name ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class _HomeServiceGrid extends StatelessWidget {
   final String title;
-  final List<Service>? services;
+  final List<Service> services;
   const _HomeServiceGrid({required this.title, required this.services});
 
   String _price(Service service) {
@@ -351,13 +468,7 @@ class _HomeServiceGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (services == null) {
-      return const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      );
-    }
-    if (services!.isEmpty) {
+    if (services.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -374,7 +485,7 @@ class _HomeServiceGrid extends StatelessWidget {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: services!.length,
+            itemCount: services.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 12,
@@ -382,7 +493,7 @@ class _HomeServiceGrid extends StatelessWidget {
               mainAxisExtent: 210,
             ),
             itemBuilder: (context, index) {
-              final service = services![index];
+              final service = services[index];
               final price = _price(service);
               return InkWell(
                 onTap: () {
