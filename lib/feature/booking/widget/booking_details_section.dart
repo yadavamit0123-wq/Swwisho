@@ -25,12 +25,17 @@ class BookingDetailsSection extends StatelessWidget {
           String bookingStatus = bookingDetails.bookingStatus ?? "";
           bool isLoggedIn = Get.find<AuthController>().isLoggedIn();
 
-          String dateString = DateConverter.dateMonthYearTimeTwentyFourFormat(DateTime.tryParse(bookingDetails.serviceSchedule!)!);
-          DateFormat format = DateFormat("dd MMM,yyyy hh:mm a");
-          DateTime dateTime = format.parse(dateString);
-          DateTime rememberTime = dateTime.subtract(const Duration(minutes: 60));
-          DateTime now = DateTime.now();
-          bool showRescheduleWidgets = now.isBefore(rememberTime);
+          bool showRescheduleWidgets = false;
+          try {
+            final schedule = DateTime.tryParse(bookingDetails.serviceSchedule ?? '');
+            if (schedule != null) {
+              String dateString = DateConverter.dateMonthYearTimeTwentyFourFormat(schedule);
+              DateFormat format = DateFormat("dd MMM,yyyy hh:mm a");
+              DateTime dateTime = format.parse(dateString);
+              DateTime rememberTime = dateTime.subtract(const Duration(minutes: 60));
+              showRescheduleWidgets = DateTime.now().isBefore(rememberTime);
+            }
+          } catch (_) {}
 
           return SingleChildScrollView( physics: const ClampingScrollPhysics(), child: Center(
             child: Padding( padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),

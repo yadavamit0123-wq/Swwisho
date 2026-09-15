@@ -1108,5 +1108,7 @@
   "customer_info": "معلومات العميل",
   "service_location_hint": "اختر موقع الخدمة المطلوب",
   "you_have_to_go_to_provider_location_in_order_to_receive_this_service": "يجب عليك الذهاب إلى موقع المزود لتلقي هذه الخدمة",
-  "provider_unavailable_hint_text": "إذا كان المزود الذي اخترته غير متاح، فقد يعيد جدولة طلبك أو يرفضه. يمكنك تعديل جدولك لتلقي الخدمة منه."
+  "provider_unavailable_hint_text": "إذا كان المزود الذي اخترته غير متاح، فقد يعيد جدولة طلبك أو يرفضه. يمكنك تعديل جدولك لتلقي الخدمة منه.",
+  "something_went_wrong": "حدث خطأ ما، يرجى المحاولة مرة أخرى",
+  "success": "نجاح"
 }

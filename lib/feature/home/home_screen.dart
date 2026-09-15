@@ -146,7 +146,13 @@ class _HomeScreenState extends State<HomeScreen> {
       availableServiceCount = savedCount;
     }
     _loadHome();
-    HomeScreen.loadData(true, availableServiceCount: availableServiceCount);
+
+    // The visible home content comes from _loadHome(). Everything else is
+    // background warm-up for other screens, so let the first frame paint
+    // before firing those requests.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      HomeScreen.loadData(true, availableServiceCount: availableServiceCount);
+    });
   }
 
   Map<String, dynamic>? _asMap(dynamic data) {

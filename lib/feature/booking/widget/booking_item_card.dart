@@ -105,9 +105,13 @@ class BookingItemCard extends StatelessWidget {
                             }
                           }
                           if(option.title == "rebook"){
+                            final bookingId = bookingModel.id;
+                            if (bookingId == null || bookingId.isEmpty) {
+                              return;
+                            }
                             serviceBookingController.updateRebookIndex(index);
 
-                           await serviceBookingController.checkCartSubcategory(bookingModel.id!, bookingModel.subCategoryId!);
+                            await serviceBookingController.checkCartSubcategory(bookingId, bookingModel.subCategoryId ?? "");
 
                           }
 

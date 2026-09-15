@@ -332,7 +332,13 @@ class ServiceController extends GetxController implements GetxService {
 
       Response response = await serviceRepo.getServiceListBasedOnSubCategory(subCategoryID: subCategoryID,offset: offset);
       if (response.statusCode == 200) {
-        _subcategoryBasedServiceContent = ServiceModel.fromJson(response.body).content;
+        try {
+          _subcategoryBasedServiceContent = response.body is Map
+              ? ServiceModel.fromJson(Map<String, dynamic>.from(response.body)).content
+              : null;
+        } catch (_) {
+          _subcategoryBasedServiceContent = null;
+        }
         if(offset != 1 && _subCategoryBasedServiceList !=null ){
           _subCategoryBasedServiceList!.addAll(_subcategoryBasedServiceContent?.serviceList ?? []);
         }else{
@@ -352,17 +358,32 @@ class ServiceController extends GetxController implements GetxService {
     }
   }
 
+  List<Service> _parseCampaignServices(dynamic body) {
+    final services = <Service>[];
+    final content = body is Map ? body['content'] : null;
+    final data = content is Map ? content['data'] : (content is List ? content : null);
+    if (data is List) {
+      for (final item in data) {
+        try {
+          if (item is Map) {
+            final service = ServiceTypesModel.fromJson(Map<String, dynamic>.from(item)).service;
+            if (service != null) {
+              services.add(service);
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    return services;
+  }
+
   Future<void> getCampaignBasedServiceList(String campaignID, bool reload) async {
     Response response = await serviceRepo.getItemsBasedOnCampaignId(campaignID: campaignID);
-    if (response.body['response_code'] == 'default_200') {
-      if(reload){
+    if (response.body is Map && response.body['response_code'] == 'default_200') {
+      if(reload || _campaignBasedServiceList == null){
         _campaignBasedServiceList = [];
       }
-      response.body['content']['data'].forEach((serviceTypesModel) {
-        if(ServiceTypesModel.fromJson(serviceTypesModel).service != null){
-          _campaignBasedServiceList!.add(ServiceTypesModel.fromJson(serviceTypesModel).service!);
-        }
-      });
+      _campaignBasedServiceList!.addAll(_parseCampaignServices(response.body));
       Get.toNamed(RouteHelper.allServiceScreenRoute("fromCampaign",campaignID: campaignID));
     } else {
       customSnackBar('campaign_is_not_available_for_this_service'.tr);
@@ -502,16 +523,12 @@ class ServiceController extends GetxController implements GetxService {
   }
 
   Future<void> getMixedCampaignList(String campaignID, bool isWithPagination) async {
-    if(!isWithPagination){
+    if(!isWithPagination || _campaignBasedServiceList == null){
       _campaignBasedServiceList = [];
     }
     Response response = await serviceRepo.getItemsBasedOnCampaignId(campaignID: campaignID);
-    if (response.body['response_code'] == 'default_200') {
-      response.body['content']['data'].forEach((serviceTypesModel) {
-        if(ServiceTypesModel.fromJson(serviceTypesModel).service != null){
-          _campaignBasedServiceList!.add(ServiceTypesModel.fromJson(serviceTypesModel).service!);
-        }
-      });
+    if (response.body is Map && response.body['response_code'] == 'default_200') {
+      _campaignBasedServiceList!.addAll(_parseCampaignServices(response.body));
       _isLoading = false;
       if(_campaignBasedServiceList!.isEmpty){
         Get.find<CategoryController>().getCampaignBasedCategoryList(campaignID,false);
@@ -529,20 +546,29 @@ class ServiceController extends GetxController implements GetxService {
   }
 
   Future<void> getOffersList(int offset, bool reload) async {
-    Response response = await serviceRepo.getOffersList(offset);
-    if (response.statusCode == 200) {
-      if( reload){
-        _offerBasedServiceList = [];
+    try {
+      Response response = await serviceRepo.getOffersList(offset);
+      if (response.statusCode == 200) {
+        try {
+          if (response.body is Map) {
+            _offerBasedServiceContent =
+                ServiceModel.fromJson(Map<String, dynamic>.from(response.body)).content;
+          }
+        } catch (_) {
+          _offerBasedServiceContent = null;
+        }
+
+        final fetched = _offerBasedServiceContent?.serviceList ?? [];
+        if (reload || offset == 1 || _offerBasedServiceList == null) {
+          _offerBasedServiceList = [];
+        }
+        _offerBasedServiceList!.addAll(fetched);
+      } else {
+        _offerBasedServiceList ??= [];
+        ApiChecker.checkApi(response);
       }
-      _offerBasedServiceContent = ServiceModel.fromJson(response.body).content;
-      if(_offerBasedServiceList != null && offset != 1){
-        _offerBasedServiceList!.addAll(_offerBasedServiceContent!.serviceList!);
-      }else{
-        _offerBasedServiceList = [];
-        _offerBasedServiceList!.addAll(_offerBasedServiceContent!.serviceList!);
-      }
-    } else {
-      ApiChecker.checkApi(response);
+    } catch (_) {
+      _offerBasedServiceList ??= [];
     }
     update();
   }

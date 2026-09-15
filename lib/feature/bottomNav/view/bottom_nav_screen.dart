@@ -15,6 +15,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   int _pageIndex = 0;
   bool _canExit = GetPlatform.isWeb ? true : false;
 
+  /// Tabs the user has opened at least once. Untouched tabs stay empty so the
+  /// app does not build/fetch screens nobody asked for.
+  final Set<int> _visitedTabs = {0};
+
   @override
   void initState() {
     super.initState();
@@ -169,24 +173,39 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
 
   Widget _bottomNavigationView(AddressModel? previousAddress, bool showServiceNotAvailableDialog) {
     PriceConverter.getCurrency();
-    switch (Get.find<BottomNavController>().currentPage) {
-      case BnbItem.homePage:
-        return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
+
+    final isLoggedIn = Get.find<AuthController>().isLoggedIn();
+    final currentPage = Get.find<BottomNavController>().currentPage;
+
+    int index;
+    switch (currentPage) {
       case BnbItem.bookings:
-        if (!Get.find<AuthController>().isLoggedIn()) {
-          return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
-        }
-        return const BookingListScreen();
+        index = isLoggedIn ? 1 : 0;
+        break;
       case BnbItem.cart:
-        if (!Get.find<AuthController>().isLoggedIn()) {
-          return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
-        }
-        return const CartScreen(fromNav: true);
+        index = isLoggedIn ? 2 : 0;
+        break;
       case BnbItem.offers:
-        return const OfferScreen();
+        index = 3;
+        break;
+      case BnbItem.homePage:
       case BnbItem.more:
-        return HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog,);
+        index = 0;
+        break;
     }
+    _visitedTabs.add(index);
+
+    // IndexedStack keeps each tab alive so switching back is instant and
+    // already-loaded data is not fetched again.
+    return IndexedStack(
+      index: index,
+      children: [
+        HomeScreen(addressModel: previousAddress, showServiceNotAvailableDialog: showServiceNotAvailableDialog),
+        (isLoggedIn && _visitedTabs.contains(1)) ? const BookingListScreen() : const SizedBox.shrink(),
+        (isLoggedIn && _visitedTabs.contains(2)) ? const CartScreen(fromNav: true) : const SizedBox.shrink(),
+        _visitedTabs.contains(3) ? const OfferScreen() : const SizedBox.shrink(),
+      ],
+    );
   }
 }
 

@@ -38,7 +38,7 @@ class ServiceWidgetVertical extends StatelessWidget {
     try {
       discountModel = PriceConverter.discountCalculation(service);
     } catch (_) {
-      discountModel = Discount(discountAmount: 0, discountAmountType: 'amount');
+      discountModel = Discount(discountAmount: 0.0, discountAmountType: 'amount');
     }
     return OnHover(
       isItem: true,
@@ -61,7 +61,7 @@ class ServiceWidgetVertical extends StatelessWidget {
                       ClipRRect(
                         borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusSmall)),
                         child: CustomImage(
-                          image: '${service.thumbnailFullPath}',
+                          image: service.thumbnailFullPath ?? '',
                           fit: BoxFit.cover,width: double.maxFinite,
                           height: double.infinity,
                         ),

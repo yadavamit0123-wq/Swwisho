@@ -169,9 +169,16 @@ class _PaidPaymentView extends StatelessWidget {
                         onYesPressed: () async {
                           Get.back();
                           Get.dialog(const CustomLoader(), barrierDismissible: false);
-                          await  Get.find<CheckOutController>().switchPaymentMethod(bookingId: bookingDetails.id ?? "", paymentMethod: "cash_after_service");
-
-                          Get.back();
+                          try {
+                            await Get.find<CheckOutController>().switchPaymentMethod(
+                              bookingId: bookingDetails.id ?? "", paymentMethod: "cash_after_service",
+                              shouldCloseDialog: false,
+                            );
+                          } finally {
+                            if (Get.isDialogOpen ?? false) {
+                              Get.back();
+                            }
+                          }
                         },
                       ));
 

@@ -36,14 +36,18 @@ class BookingDetailsController extends GetxController implements GetxService {
       _isLoading = true;
       update();
     }
-    Response response = await bookingDetailsRepo.getBookingDetails(bookingID: bookingId);
-    if (response.statusCode == 200) {
-      _bookingDetailsContent = BookingDetailsModel.fromJson(response.body).content;
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await bookingDetailsRepo.getBookingDetails(bookingID: bookingId);
+      if (response.statusCode == 200 && response.body is Map) {
+        _bookingDetailsContent = BookingDetailsModel.fromJson(Map<String, dynamic>.from(response.body)).content;
+      } else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> getSubBookingDetails({required String bookingId, bool reload = true}) async {
@@ -51,14 +55,18 @@ class BookingDetailsController extends GetxController implements GetxService {
       _isLoading = true;
       update();
     }
-    Response response = await bookingDetailsRepo.getSubBookingDetails(bookingID: bookingId);
-    if (response.statusCode == 200) {
-      _subBookingDetailsContent = BookingDetailsModel.fromJson(response.body).content;
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await bookingDetailsRepo.getSubBookingDetails(bookingID: bookingId);
+      if (response.statusCode == 200 && response.body is Map) {
+        _subBookingDetailsContent = BookingDetailsModel.fromJson(Map<String, dynamic>.from(response.body)).content;
+      } else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> trackBookingDetails(String bookingId, String phoneNumber, {bool reload = true}) async {
@@ -66,72 +74,94 @@ class BookingDetailsController extends GetxController implements GetxService {
       _isLoading = true;
       update();
     }
-    Response response = await bookingDetailsRepo.trackBookingDetails(
-      bookingID: bookingId,
-      phoneNUmber: phoneNumber,
-    );
-    if (response.statusCode == 200) {
-      _bookingDetailsContent = BookingDetailsModel.fromJson(response.body).content;
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await bookingDetailsRepo.trackBookingDetails(
+        bookingID: bookingId,
+        phoneNUmber: phoneNumber,
+      );
+      if (response.statusCode == 200 && response.body is Map) {
+        _bookingDetailsContent = BookingDetailsModel.fromJson(Map<String, dynamic>.from(response.body)).content;
+      } else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> bookingCancel({required String bookingId, bool fromListScreen = false}) async {
     _isLoading = true;
     update();
-    Response response = await bookingDetailsRepo.bookingCancel(bookingID: bookingId);
-    if (response.statusCode == 200) {
-      if (fromListScreen) {
-        ServiceBookingController serviceBookingController = Get.find<ServiceBookingController>();
-        await serviceBookingController.getAllBookingService(
-          offset: 1,
-          bookingStatus: serviceBookingController.selectedBookingStatus.name.toLowerCase(),
-          isFromPagination: false,
-          serviceType: serviceBookingController.selectedServiceType.name,
-        );
+    try {
+      Response response = await bookingDetailsRepo.bookingCancel(bookingID: bookingId);
+      if (response.statusCode == 200) {
+        if (fromListScreen) {
+          ServiceBookingController serviceBookingController = Get.find<ServiceBookingController>();
+          await serviceBookingController.getAllBookingService(
+            offset: 1,
+            bookingStatus: serviceBookingController.selectedBookingStatus.name.toLowerCase(),
+            isFromPagination: false,
+            serviceType: serviceBookingController.selectedServiceType.name,
+          );
+        } else {
+          await getBookingDetails(bookingId: bookingId, reload: false);
+        }
+        final message = (response.body is Map ? response.body['message'] : null)?.toString();
+        customSnackBar(message ?? 'success'.tr, type: ToasterMessageType.success);
       } else {
-        await getBookingDetails(bookingId: bookingId, reload: false);
+        ApiChecker.checkApi(response);
       }
-      customSnackBar(response.body['message'], type: ToasterMessageType.success);
-    } else {
-      ApiChecker.checkApi(response);
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> subBookingCancel({required String subBookingId}) async {
     _isLoading = true;
     update();
-    Response response = await bookingDetailsRepo.subBookingCancel(bookingID: subBookingId);
-    if (response.statusCode == 200) {
-      await getSubBookingDetails(bookingId: subBookingId, reload: false);
-      customSnackBar(response.body['message'], type: ToasterMessageType.success);
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await bookingDetailsRepo.subBookingCancel(bookingID: subBookingId);
+      if (response.statusCode == 200) {
+        await getSubBookingDetails(bookingId: subBookingId, reload: false);
+        final message = (response.body is Map ? response.body['message'] : null)?.toString();
+        customSnackBar(message ?? 'success'.tr, type: ToasterMessageType.success);
+      } else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   Future<void> reschedule({required String bookingId, required String rescheduleTime}) async {
     _isLoading = true;
     update();
-    Response response = await bookingDetailsRepo.reschedule(
-      bookingId: bookingId,
-      rescheduleTime: rescheduleTime,
-    );
-    if (response.statusCode == 200) {
-      customSnackBar(response.body['message'], type: ToasterMessageType.success);
-      await getBookingDetails(bookingId: bookingId, reload: false);
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await bookingDetailsRepo.reschedule(
+        bookingId: bookingId,
+        rescheduleTime: rescheduleTime,
+      );
+      if (response.statusCode == 200) {
+        final message = (response.body is Map ? response.body['message'] : null)?.toString();
+        customSnackBar(message ?? 'success'.tr, type: ToasterMessageType.success);
+        await getBookingDetails(bookingId: bookingId, reload: false);
+      } else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    } finally {
+      _isLoading = false;
+      update();
     }
-    _isLoading = false;
-    update();
   }
 
   void updateSelectedDigitalPayment({DigitalPaymentMethod? value, bool shouldUpdate = true}) {

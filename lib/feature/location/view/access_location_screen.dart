@@ -172,16 +172,31 @@ class BottomButton extends StatelessWidget {
           }
           _checkPermission(() async {
             Get.dialog(const CustomLoader(), barrierDismissible: false);
-            AddressModel address = await locationController.getCurrentLocation(true,  deviceCurrentLocation: true);
-            ZoneResponseModel response = await locationController.getZone(address.latitude!, address.longitude!, false);
 
-            if(response.isSuccess) {
-              if (Get.isDialogOpen ?? false) Get.back();
-              locationController.saveAddressAndNavigate(address, fromSignUp, route != null ? route! : '', route != null, true);
-            }else {
-              Get.back();
-              //Get.toNamed(RouteHelper.getPickMapRoute(route == null ? RouteHelper.accessLocation : route!, route != null, 'false', null, previousAddress));
-              customSnackBar(response.message);
+            void closeLoader() {
+              if (Get.isDialogOpen ?? false) {
+                Get.back();
+              }
+            }
+
+            try {
+              AddressModel address = await locationController
+                  .getCurrentLocation(true, deviceCurrentLocation: true)
+                  .timeout(const Duration(seconds: 20));
+              ZoneResponseModel response = await locationController
+                  .getZone(address.latitude ?? '', address.longitude ?? '', false)
+                  .timeout(const Duration(seconds: 20));
+
+              closeLoader();
+
+              if(response.isSuccess) {
+                locationController.saveAddressAndNavigate(address, fromSignUp, route != null ? route! : '', route != null, true);
+              }else {
+                customSnackBar(response.message);
+              }
+            } catch (_) {
+              closeLoader();
+              customSnackBar('something_went_wrong'.tr);
             }
           });
         },

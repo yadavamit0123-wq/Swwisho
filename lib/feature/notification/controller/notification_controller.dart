@@ -25,39 +25,56 @@ class NotificationController extends GetxController implements GetxService{
 
 
     _isLoading = true;
-    Response response = await notificationRepo.getNotificationList(offset);
-    if(response.statusCode == 200){
-      if(reload){
-        allNotificationList = [];
-        notificationList = [];
-        dateList = [];
-      }else{
-        allNotificationList =[];
-      }
-      _notificationModel =  NotificationModel.fromJson(response.body);
-      for (var data in notificationModel!.content!.data!) {
-        if(!dateList.contains(DateConverter.dateStringMonthYear(DateTime.tryParse(data.createdAt!)))) {
-          dateList.add(DateConverter.dateStringMonthYear(DateTime.tryParse(data.createdAt!)));
+    try {
+      Response response = await notificationRepo.getNotificationList(offset);
+      if(response.statusCode == 200 && response.body is Map){
+        if(reload){
+          allNotificationList = [];
+          notificationList = [];
+          dateList = [];
+        }else{
+          allNotificationList =[];
         }
-      }
+        try {
+          _notificationModel = NotificationModel.fromJson(Map<String, dynamic>.from(response.body));
+        } catch (_) {
+          _notificationModel = null;
+        }
 
-      for (var data in notificationModel!.content!.data!) {
-        allNotificationList.add(data);
-      }
+        final notifications = _notificationModel?.content?.data ?? [];
 
-      for(int i=0; i< dateList.length;i++){
-        notificationList.add([]);
-        for (var element in allNotificationList) {
-          if(dateList[i] == DateConverter.dateStringMonthYear(DateTime.tryParse(element.createdAt!))){
-            notificationList[i].add(element);
+        for (var data in notifications) {
+          final day = _dayLabel(data.createdAt);
+          if(day != null && !dateList.contains(day)) {
+            dateList.add(day);
           }
         }
+
+        allNotificationList.addAll(notifications);
+
+        for(int i=0; i< dateList.length;i++){
+          notificationList.add([]);
+          for (var element in allNotificationList) {
+            if(dateList[i] == _dayLabel(element.createdAt)){
+              notificationList[i].add(element);
+            }
+          }
+        }
+      } else{
+        ApiChecker.checkApi(response);
       }
-      _isLoading =false;
-    } else{
-      _isLoading =false;
-      ApiChecker.checkApi(response);
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+      update();
     }
-    update();
+  }
+
+  String? _dayLabel(String? createdAt) {
+    final date = DateTime.tryParse(createdAt ?? '');
+    if (date == null) {
+      return null;
+    }
+    return DateConverter.dateStringMonthYear(date);
   }
 }

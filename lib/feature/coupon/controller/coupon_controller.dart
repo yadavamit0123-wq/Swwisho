@@ -31,48 +31,74 @@ class CouponController extends GetxController implements GetxService{
       _expiredCouponList = null;
     }
 
-    Response response = await couponRepo.getCouponList();
-    if (response.statusCode == 200) {
-      _activeCouponList = [];
-      _expiredCouponList = [];
-      response.body["content"]['active_coupons']['data'].forEach((category) {
-          _activeCouponList!.add(CouponModel.fromJson(category));
-      });
-      response.body["content"]['expired_coupons']['data'].forEach((category) {
-        _expiredCouponList!.add(CouponModel.fromJson(category));
-      });
-    } else {
-      ApiChecker.checkApi(response);
+    try {
+      Response response = await couponRepo.getCouponList();
+      if (response.statusCode == 200) {
+        _activeCouponList = [];
+        _expiredCouponList = [];
+        final content = response.body is Map ? response.body["content"] : null;
+        if (content is Map) {
+          _activeCouponList!.addAll(_parseCoupons(content['active_coupons']));
+          _expiredCouponList!.addAll(_parseCoupons(content['expired_coupons']));
+        }
+      } else {
+        _activeCouponList ??= [];
+        _expiredCouponList ??= [];
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {
+      _activeCouponList ??= [];
+      _expiredCouponList ??= [];
     }
 
     update();
+  }
+
+  List<CouponModel> _parseCoupons(dynamic section) {
+    final coupons = <CouponModel>[];
+    final data = section is Map ? section['data'] : (section is List ? section : null);
+    if (data is List) {
+      for (final item in data) {
+        try {
+          if (item is Map) {
+            coupons.add(CouponModel.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+    }
+    return coupons;
   }
 
   Future<ResponseModel> applyCoupon(String  couponCode) async {
     _isLoading = true;
     update();
 
-    Response response = await couponRepo.applyCoupon(couponCode);
-    if(response.statusCode == 200 && response.body['response_code'] == 'coupon_applied_200'){
+    try {
+      Response response = await couponRepo.applyCoupon(couponCode);
+      final message = (response.body is Map ? response.body['message'] : null)?.toString();
 
-      for( int i = 0 ; i < _activeCouponList!.length - 1; i ++){
-        if(_activeCouponList?[i].couponCode == couponCode || (_activeCouponList?[i].couponCode?.toLowerCase() == couponCode.toLowerCase())){
-          _activeCouponList![i].isUsed = 1;
-        }else{
-          _activeCouponList![i].isUsed = 0;
+      if(response.statusCode == 200 && response.body is Map && response.body['response_code'] == 'coupon_applied_200'){
+
+        final couponList = _activeCouponList ?? [];
+        for( int i = 0 ; i < couponList.length ; i ++){
+          if(couponList[i].couponCode == couponCode || (couponList[i].couponCode?.toLowerCase() == couponCode.toLowerCase())){
+            couponList[i].isUsed = 1;
+          }else{
+            couponList[i].isUsed = 0;
+          }
         }
+        await Get.find<CartController>().getCartListFromServer();
+        Get.find<CartController>().updateBookingAmountWithoutCoupon();
+
+        return ResponseModel(true, message ?? 'success'.tr);
+      }else{
+        return ResponseModel(false, message ?? 'something_went_wrong'.tr);
       }
-      await Get.find<CartController>().getCartListFromServer();
-      Get.find<CartController>().updateBookingAmountWithoutCoupon();
-
+    } catch (_) {
+      return ResponseModel(false, 'something_went_wrong'.tr);
+    } finally {
       _isLoading = false;
       update();
-      return ResponseModel(true, response.body['message']);
-    }else{
-      _isLoading = false;
-      update();
-
-      return ResponseModel(false,  response.body['message']);
     }
   }
 

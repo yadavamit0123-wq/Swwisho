@@ -234,8 +234,13 @@ class _ServiceFilterDialogState extends State<ServiceFilterDialog> {
                     child: CustomButton(buttonText: 'filter'.tr,onPressed: () async{
                       Get.back();
                       Get.dialog(const CustomLoader(), barrierDismissible: false,);
-                      await searchController.searchData(query:searchController.searchController.text,offset: 1, shouldUpdate: false);
-                      Get.back();
+                      try {
+                        await searchController.searchData(query:searchController.searchController.text,offset: 1, shouldUpdate: false);
+                      } finally {
+                        if (Get.isDialogOpen ?? false) {
+                          Get.back();
+                        }
+                      }
                     },),
                   ),
                 ],

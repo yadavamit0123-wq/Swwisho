@@ -138,9 +138,16 @@ class _IncompleteOfflinePaymentDialogState extends State<IncompleteOfflinePaymen
                   Get.back();
                   Get.dialog(const CustomLoader(), barrierDismissible: false);
 
-                  await  Get.find<CheckOutController>().switchPaymentMethod(bookingId: widget.booking?.id ?? "", paymentMethod: "cash_after_service");
-
-                  Get.back();
+                  try {
+                    await Get.find<CheckOutController>().switchPaymentMethod(
+                      bookingId: widget.booking?.id ?? "", paymentMethod: "cash_after_service",
+                      shouldCloseDialog: false,
+                    );
+                  } finally {
+                    if (Get.isDialogOpen ?? false) {
+                      Get.back();
+                    }
+                  }
                 },
                 style: TextButton.styleFrom(
                   backgroundColor:   Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),

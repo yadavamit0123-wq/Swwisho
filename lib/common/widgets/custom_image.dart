@@ -26,18 +26,24 @@ class CustomImage extends StatelessWidget {
       return _fallback();
     }
 
-    return Image.network(
-      url,
+    if (kIsWeb) {
+      return Image.network(
+        url,
+        height: height,
+        width: width,
+        fit: fit,
+        errorBuilder: (_, __, ___) => _fallback(),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
       height: height,
       width: width,
       fit: fit,
-      errorBuilder: (_, __, ___) => _fallback(),
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) {
-          return child;
-        }
-        return _fallback();
-      },
+      fadeInDuration: const Duration(milliseconds: 120),
+      placeholder: (_, __) => _fallback(),
+      errorWidget: (_, __, ___) => _fallback(),
     );
   }
 }

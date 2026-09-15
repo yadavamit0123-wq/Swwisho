@@ -87,20 +87,20 @@ class Discount {
         this.updatedAt});
 
   Discount.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    discountTitle = json['discount_title'];
-    discountType = json['discount_type'];
-    discountAmount = double.tryParse(json['discount_amount'].toString());
-    discountAmountType = json['discount_amount_type'];
-    minPurchase = double.tryParse(json['min_purchase'].toString());
-    maxDiscountAmount = json['max_discount_amount'];
-    limitPerUser = json['limit_per_user'];
-    promotionType = json['promotion_type'];
-    isActive = json['is_active'];
-    startDate = json['start_date'];
-    endDate = json['end_date'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    id = json['id']?.toString();
+    discountTitle = json['discount_title']?.toString();
+    discountType = json['discount_type']?.toString();
+    discountAmount = double.tryParse(json['discount_amount']?.toString() ?? '');
+    discountAmountType = json['discount_amount_type']?.toString();
+    minPurchase = double.tryParse(json['min_purchase']?.toString() ?? '');
+    maxDiscountAmount = num.tryParse(json['max_discount_amount']?.toString() ?? '');
+    limitPerUser = int.tryParse(json['limit_per_user']?.toString() ?? '');
+    promotionType = json['promotion_type']?.toString();
+    isActive = int.tryParse(json['is_active']?.toString() ?? '');
+    startDate = json['start_date']?.toString();
+    endDate = json['end_date']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
   }
 
   Map<String, dynamic> toJson() {

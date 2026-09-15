@@ -142,21 +142,33 @@ class _EditProfileGeneralInfoState extends State<EditProfileGeneralInfo> {
                               onSuffixTap: userInfo?.isPhoneVerified == 0 && config?.phoneVerification == 1 ? () async {
                                 Get.dialog(const CustomLoader(), barrierDismissible: false);
                                 SendOtpType  type = config?.firebaseOtpVerification == 1 ? SendOtpType.firebase :  SendOtpType.verification ;
-                                await authController.sendVerificationCode(identity: userController.countryDialCode + phoneController.text, identityType: "phone", type: type, fromPage: "profile").then((status){
+                                try {
+                                  final status = await authController.sendVerificationCode(
+                                    identity: userController.countryDialCode + phoneController.text,
+                                    identityType: "phone", type: type, fromPage: "profile",
+                                  );
 
-                                  if(status != null){
+                                  if (Get.isDialogOpen ?? false) {
                                     Get.back();
-                                    if(status.isSuccess!){
-                                      Get.toNamed(RouteHelper.getVerificationRoute(
-                                        identity: userController.countryDialCode + phoneController.text,identityType: "phone",
-                                        fromPage: "profile",
-                                        firebaseSession: type == SendOtpType.firebase ? status.message : null,
-                                      ));
-                                    }else{
-                                      customSnackBar(status.message.toString().capitalizeFirst ?? "" );
-                                    }
                                   }
-                                });
+
+                                  if(status == null){
+                                    customSnackBar('something_went_wrong'.tr);
+                                  } else if(status.isSuccess ?? false){
+                                    Get.toNamed(RouteHelper.getVerificationRoute(
+                                      identity: userController.countryDialCode + phoneController.text,identityType: "phone",
+                                      fromPage: "profile",
+                                      firebaseSession: type == SendOtpType.firebase ? status.message : null,
+                                    ));
+                                  }else{
+                                    customSnackBar(status.message.toString().capitalizeFirst ?? "" );
+                                  }
+                                } catch (_) {
+                                  if (Get.isDialogOpen ?? false) {
+                                    Get.back();
+                                  }
+                                  customSnackBar('something_went_wrong'.tr);
+                                }
 
 
                               } : null ,

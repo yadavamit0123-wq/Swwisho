@@ -37,18 +37,23 @@ class _PickMapScreenState extends State<PickMapScreen> {
   @override
   void initState() {
     super.initState();
-    if(widget.fromAddAddress!) {
+    if(widget.fromAddAddress ?? false) {
       Get.find<LocationController>().setPickData();
 
     }
 
-    if(widget.zone !=null){
-      _centerLatLng = Get.find<ServiceAreaController>().computeCentroid(coordinates: widget.zone!.formattedCoordinates!);
+    final zoneCoordinates = widget.zone?.formattedCoordinates;
+    if(zoneCoordinates != null && zoneCoordinates.isNotEmpty){
+      _centerLatLng = Get.find<ServiceAreaController>().computeCentroid(coordinates: zoneCoordinates);
       _initialPosition = LatLng(_centerLatLng!.latitude , _centerLatLng!.longitude);
 
-      widget.zone?.formattedCoordinates?.forEach((element) {
-        zoneLatLongList.add(LatLng(element.latitude!, element.longitude!));
-      });
+      for (final element in zoneCoordinates) {
+        final lat = element.latitude;
+        final lng = element.longitude;
+        if (lat != null && lng != null) {
+          zoneLatLongList.add(LatLng(lat, lng));
+        }
+      }
 
       List<Polygon> polygonList = [];
 

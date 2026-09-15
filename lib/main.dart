@@ -164,7 +164,7 @@ class _MyAppState extends State<MyApp> {
             initialRoute: GetPlatform.isWeb ? RouteHelper.getInitialRoute() : RouteHelper.getSplashRoute(widget.body, widget.route),
             getPages: RouteHelper.routes,
             defaultTransition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 500),
+            transitionDuration: const Duration(milliseconds: 160),
             builder: (context, widget) => MediaQuery(
               data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
               child: Material(

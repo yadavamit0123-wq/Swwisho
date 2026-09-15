@@ -11,8 +11,12 @@ class SubCategoryWidget extends GetView<ServiceController> {
 
     return InkWell(
       onTap: () {
+        final id = categoryModel?.id;
+        if (id == null || id.isEmpty) {
+          return;
+        }
         Get.find<ServiceController>().cleanSubCategory();
-        Get.toNamed(RouteHelper.allServiceScreenRoute(categoryModel!.id!.toString()));
+        Get.toNamed(RouteHelper.allServiceScreenRoute(id));
       },
       child: Container(
         margin: EdgeInsets.symmetric(horizontal:ResponsiveHelper.isDesktop(context) ? 0 : Dimensions.paddingSizeDefault),

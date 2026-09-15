@@ -9,25 +9,24 @@ class PriceConverter {
   }
 
   static String convertPrice(double? price, {int ? decimalPointCount,double? discount, String? discountType, bool isShowLongPrice = false}) {
+    double amount = price ?? 0;
     if(discount != null && discountType != null){
       if(discountType == 'amount') {
-        price = price! - discount;
+        amount = amount - discount;
       }else if(discountType == 'percent') {
-        price = price! - ((discount / 100) * price);
+        amount = amount - ((discount / 100) * amount);
       }
     }
     bool isRightSide = Get.find<SplashController>().configModel.content?.currencySymbolPosition == 'right' && Get.find<LocalizationController>().isLtr == true;
-    return isShowLongPrice == true ?
-    '${isRightSide ? '' : getCurrency()}'
-        '${(price!).toStringAsFixed(decimalPointCount ?? int.parse(Get.find<SplashController>().configModel.content?.currencyDecimalPoint ?? '0'))
-        .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}'
-        '${isRightSide ? getCurrency() : ''}':
+    int decimalPoint = decimalPointCount ??
+        int.tryParse(Get.find<SplashController>().configModel.content?.currencyDecimalPoint ?? '0') ?? 0;
 
-    longToShortPrice('${isRightSide ? '' : getCurrency()}'
-        '${(price!).toStringAsFixed(decimalPointCount ?? int.parse(Get.find<SplashController>().configModel.content?.currencyDecimalPoint ?? '0'))
+    final formatted = '${isRightSide ? '' : getCurrency()}'
+        '${amount.toStringAsFixed(decimalPoint)
         .replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}'
-        '${isRightSide ? getCurrency() : ''}');
+        '${isRightSide ? getCurrency() : ''}';
 
+    return isShowLongPrice == true ? formatted : longToShortPrice(formatted);
   }
 
   static double convertWithDiscount(double price, double discount, String discountType) {
@@ -59,13 +58,15 @@ class PriceConverter {
 
   static Discount _getDiscount(List<ServiceDiscount>? serviceDiscountList, double? discountAmount, String? discountAmountType) {
     ServiceDiscount? serviceDiscount = (serviceDiscountList != null && serviceDiscountList.isNotEmpty) ?serviceDiscountList.first : null;
-    if(serviceDiscount != null){
-      num? getDiscount = serviceDiscount.discount?.discountAmount;
-      if(getDiscount! > serviceDiscount.discount!.maxDiscountAmount! && serviceDiscount.discount!.discountType == 'percent') {
-        getDiscount = serviceDiscount.discount!.maxDiscountAmount!;
+    if(serviceDiscount?.discount != null){
+      final discount = serviceDiscount!.discount!;
+      num getDiscount = discount.discountAmount ?? 0;
+      final maxDiscount = discount.maxDiscountAmount;
+      if(maxDiscount != null && getDiscount > maxDiscount && discount.discountType == 'percent') {
+        getDiscount = maxDiscount;
       }
-      discountAmount = (discountAmount! + getDiscount);
-      discountAmountType = serviceDiscount.discount!.discountAmountType!;
+      discountAmount = ((discountAmount ?? 0) + getDiscount).toDouble();
+      discountAmountType = discount.discountAmountType ?? discountAmountType;
     }
     return Discount(discountAmount: discountAmount, discountAmountType: discountAmountType);
   }
@@ -108,14 +109,16 @@ class PriceConverter {
   static double getDiscountToAmount(Discount discount, double amount) {
 
     double amount0 = 0;
+    final discountValue = (discount.discountAmount ?? 0).toDouble();
     if(discount.discountAmountType == 'percent') {
-     amount0 = (amount * discount.discountAmount!.toDouble()) / 100.0 ;
+     amount0 = (amount * discountValue) / 100.0 ;
 
-     if(amount0 > discount.maxDiscountAmount!.toDouble()) {
-       amount0 = discount.maxDiscountAmount!.toDouble();
+     final maxDiscount = discount.maxDiscountAmount?.toDouble();
+     if(maxDiscount != null && amount0 > maxDiscount) {
+       amount0 = maxDiscount;
      }
     }else{
-      amount0 = discount.discountAmount!.toDouble();
+      amount0 = discountValue;
     }
     return amount0;
 

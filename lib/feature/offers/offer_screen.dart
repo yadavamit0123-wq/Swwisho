@@ -9,15 +9,29 @@ class OfferScreen extends StatefulWidget {
   State<OfferScreen> createState() => _OfferScreenState();
 }
 class _OfferScreenState extends State<OfferScreen> {
+  final ScrollController scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    Get.find<ServiceController>().getOffersList(1,true);
+    _loadOffers();
   }
+
+  Future<void> _loadOffers() async {
+    // Offers are zone filtered, so the zone header must be set before the call
+    // or the API replies with an empty list.
+    await HomeScreen.ensureZoneHeader();
+    await Get.find<ServiceController>().getOffersList(1, true);
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ScrollController scrollController = ScrollController();
 
     return Scaffold(
       endDrawer:ResponsiveHelper.isDesktop(context) ? const MenuDrawer():null,

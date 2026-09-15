@@ -38,8 +38,13 @@ class CartServiceWidget extends StatelessWidget {
                       flex: 1,
                       onPressed: (context) async {
                         Get.dialog(const CustomLoader(), barrierDismissible: false,);
-                        await Get.find<CartController>().removeCartFromServer(cart);
-                        Get.back();
+                        try {
+                          await Get.find<CartController>().removeCartFromServer(cart);
+                        } finally {
+                          if (Get.isDialogOpen ?? false) {
+                            Get.back();
+                          }
+                        }
                       },
                       backgroundColor: Theme.of(context).colorScheme.error.withValues(alpha: 0.12),
                       foregroundColor: Colors.white,

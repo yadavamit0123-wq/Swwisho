@@ -16,11 +16,10 @@ class PagerContent extends StatelessWidget {
       return onBoardingController.pageIndex == 2 ? Column(
         children: [
           Expanded(
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                Image.asset(Images.onBoardingTopTwo, width : Get.width, fit: BoxFit.cover,),
-                Padding(padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeExtraMoreLarge),
+            child: Container(
+              color: Colors.white,
+              alignment: Alignment.center,
+              child: SingleChildScrollView(
                   child: Column(mainAxisSize: MainAxisSize.min,children: [
 
                     SizedBox( child: Image.asset(image, height: Get.height * 0.22)),
@@ -50,15 +49,9 @@ class PagerContent extends StatelessWidget {
                       },
                     )
                   ],),
-                )
-              ],
+              ),
             ),
           ),
-
-          SizedBox(
-            height: Get.height * 0.25,
-            child: Image.asset(Images.onBoardingBottomThree, width: Get.width, fit: BoxFit.fitHeight,),
-          )
         ],
       ) : Column(
         children: [
@@ -137,17 +130,36 @@ void _checkPermissionAndNavigate() async {
   }
   if(permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
     Get.offAllNamed(RouteHelper.getPickMapRoute("",false,"",null,null));
-  }else {
-    Get.dialog(const CustomLoader(), barrierDismissible: false);
-    AddressModel address = await Get.find<LocationController>().getCurrentLocation(true);
-    ZoneResponseModel response = await Get.find<LocationController>().getZone(address.latitude!, address.longitude!, false);
+    return;
+  }
+
+  Get.dialog(const CustomLoader(), barrierDismissible: false);
+
+  void closeLoader() {
+    if (Get.isDialogOpen ?? false) {
+      Get.back();
+    }
+  }
+
+  try {
+    final locationController = Get.find<LocationController>();
+    AddressModel address = await locationController
+        .getCurrentLocation(true)
+        .timeout(const Duration(seconds: 20));
+
+    ZoneResponseModel response = await locationController
+        .getZone(address.latitude ?? '', address.longitude ?? '', false)
+        .timeout(const Duration(seconds: 20));
+
+    closeLoader();
 
     if(response.isSuccess) {
-      if (Get.isDialogOpen ?? false) Get.back();
-      Get.find<LocationController>().saveAddressAndNavigate(address, false, '', false, true);
+      locationController.saveAddressAndNavigate(address, false, '', false, true);
     }else {
-      Get.back();
       Get.offAllNamed(RouteHelper.getPickMapRoute("",false,"",null,null));
     }
+  } catch (_) {
+    closeLoader();
+    Get.offAllNamed(RouteHelper.getPickMapRoute("",false,"",null,null));
   }
 }

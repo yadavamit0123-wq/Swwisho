@@ -126,27 +126,29 @@ class CartController extends GetxController implements GetxService {
       fetchFromClient: ()=> cartRepo.getCartListFromServer(source: DataSourceEnum.client),
       onResponse: (data, source) {
 
+        final content = data is Map ? data['content'] : null;
+        if (content is! Map) {
+          return;
+        }
+
         _cartList = [];
-        data['content']['cart']['data'].forEach((cart){
-          _cartList.add(CartModel.fromJson(cart));
-        });
-
-        if( data['content']['wallet_balance']!=null){
-          _walletBalance = double.tryParse( data['content']['wallet_balance'].toString())!;
-        }
-        if( data['content']['total_cost']!=null){
-          _totalPrice = double.tryParse( data['content']['total_cost'].toString())!;
-        }
-        if( data['content']['pending_cost']!=null){
-          _pendingCost = double.tryParse(data['content']['pending_cost'].toString())!;
+        final cartData = content['cart'] is Map ? content['cart']['data'] : null;
+        if (cartData is List) {
+          for (final cart in cartData) {
+            try {
+              if (cart is Map) {
+                _cartList.add(CartModel.fromJson(Map<String, dynamic>.from(cart)));
+              }
+            } catch (_) {}
+          }
         }
 
-        if( data['content']['traveling_charge']!=null){
-          _travelingCharge = double.tryParse(data['content']['traveling_charge'].toString())!;
-        }
-        if( data['content']['referral_amount']!=null){
-          _referralAmount = double.tryParse( data['content']['referral_amount'].toString())!;
-        }
+        _walletBalance = double.tryParse(content['wallet_balance']?.toString() ?? '') ?? _walletBalance;
+        _totalPrice = double.tryParse(content['total_cost']?.toString() ?? '') ?? _totalPrice;
+        _pendingCost = double.tryParse(content['pending_cost']?.toString() ?? '') ?? _pendingCost;
+        _travelingCharge = double.tryParse(content['traveling_charge']?.toString() ?? '') ?? _travelingCharge;
+        _referralAmount = double.tryParse(content['referral_amount']?.toString() ?? '') ?? _referralAmount;
+
         if(_cartList.isNotEmpty){
           if(_cartList[0].provider!=null){
             _selectedProvider = _cartList[0].provider;
@@ -161,14 +163,18 @@ class CartController extends GetxController implements GetxService {
 
   Future<void> removeCartFromServer(CartModel cart)async{
     _isLoading = true;
-    Response response = await cartRepo.removeCartFromServer(cart.id);
-    if(response.statusCode == 200){
-      _cartList.remove(cart);
-    }
+    try {
+      Response response = await cartRepo.removeCartFromServer(cart.id);
+      if(response.statusCode == 200){
+        _cartList.remove(cart);
+      }
 
-    await getCartListFromServer(shouldUpdate: false);
-    _isLoading = false;
-    update();
+      await getCartListFromServer(shouldUpdate: false);
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+      update();
+    }
   }
 
 
@@ -185,44 +191,40 @@ class CartController extends GetxController implements GetxService {
     update();
 
 
-    Response response = await cartRepo.updateCartQuantity(cartID, quantity);
-    if(response.statusCode == 200){
-      _cartList = [];
-      response.body['content']['cart']['data'].forEach((cart){
-        _cartList.add(CartModel.fromJson(cart));
-
-      });
-
-      if(response.body['content']['wallet_balance']!=null){
-        _walletBalance = double.tryParse(response.body['content']['wallet_balance'].toString())!;
-      }
-
-      if(response.body['content']['total_cost']!=null){
-        _totalPrice = double.tryParse(response.body['content']['total_cost'].toString())!;
-      }
-
-      if(response.body['content']['pending_cost']!=null){
-        _pendingCost = double.tryParse(response.body['content']['pending_cost'].toString())!;
-      }
-
-      if(response.body['content']['traveling_charge']!=null){
-        _travelingCharge = double.tryParse(response.body['content']['traveling_charge'].toString())!;
-      }
-
-      if(response.body['content']['referral_amount']!=null){
-        _referralAmount = double.tryParse(response.body['content']['referral_amount'].toString())!;
-      }
-
-      if(_cartList.isNotEmpty){
-        if(_cartList[0].provider!=null){
-         _selectedProvider = _cartList[0].provider;
+    try {
+      Response response = await cartRepo.updateCartQuantity(cartID, quantity);
+      final content = response.body is Map ? response.body['content'] : null;
+      if(response.statusCode == 200 && content is Map){
+        _cartList = [];
+        final cartData = content['cart'] is Map ? content['cart']['data'] : null;
+        if (cartData is List) {
+          for (final cart in cartData) {
+            try {
+              if (cart is Map) {
+                _cartList.add(CartModel.fromJson(Map<String, dynamic>.from(cart)));
+              }
+            } catch (_) {}
+          }
         }
-        subcategoryId = _cartList[0].subCategoryId;
-      }
-    }
 
-    _isCartLoading = false;
-    update();
+        _walletBalance = double.tryParse(content['wallet_balance']?.toString() ?? '') ?? _walletBalance;
+        _totalPrice = double.tryParse(content['total_cost']?.toString() ?? '') ?? _totalPrice;
+        _pendingCost = double.tryParse(content['pending_cost']?.toString() ?? '') ?? _pendingCost;
+        _travelingCharge = double.tryParse(content['traveling_charge']?.toString() ?? '') ?? _travelingCharge;
+        _referralAmount = double.tryParse(content['referral_amount']?.toString() ?? '') ?? _referralAmount;
+
+        if(_cartList.isNotEmpty){
+          if(_cartList[0].provider!=null){
+           _selectedProvider = _cartList[0].provider;
+          }
+          subcategoryId = _cartList[0].subCategoryId;
+        }
+      }
+    } catch (_) {
+    } finally {
+      _isCartLoading = false;
+      update();
+    }
   }
 
   Future<void> updateProvider(ProviderData? providerData)async{
@@ -310,6 +312,12 @@ class CartController extends GetxController implements GetxService {
     update();
     _replaceCartList();
 
+    if(_initialCartList.isEmpty || _cartList.isEmpty){
+      _isLoading = false;
+      update();
+      return;
+    }
+
     if(_initialCartList.first.subCategoryId != _cartList.first.subCategoryId){
       Get.back();
       Get.dialog(ConfirmationDialog(
@@ -322,32 +330,47 @@ class CartController extends GetxController implements GetxService {
         onYesPressed: () async {
           Get.back();
           Get.dialog(const CustomLoader(), barrierDismissible: false,);
-          await cartRepo.removeAllCartFromServer();
-          if(_initialCartList.isNotEmpty){
-            for (int index=0; index<_initialCartList.length;index++){
-              await addToCartApi(_initialCartList[index], providerId: providerId);
+          bool succeeded = false;
+          try {
+            await cartRepo.removeAllCartFromServer();
+            if(_initialCartList.isNotEmpty){
+              for (int index=0; index<_initialCartList.length;index++){
+                await addToCartApi(_initialCartList[index], providerId: providerId);
+              }
             }
+            await getCartListFromServer();
+            succeeded = true;
+          } catch (_) {
+          } finally {
+            _isLoading = false;
+            if (Get.isDialogOpen ?? false) {
+              Get.back();
+            }
+            update();
           }
-         await getCartListFromServer();
-          _isLoading = false;
-          Get.back();
-          if(fromServiceCenterDialog){
+          if(succeeded && fromServiceCenterDialog){
             customSnackBar("successfully_added_to_cart".tr,type : ToasterMessageType.success);
+          } else if (!succeeded) {
+            customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
           }
         },
       ));
     }
     else{
-      await cartRepo.removeAllCartFromServer();
-      if(_cartList.isNotEmpty){
-        for (int index=0; index<_cartList.length;index++){
-          await addToCartApi(_cartList[index], providerId: providerId);
+      try {
+        await cartRepo.removeAllCartFromServer();
+        if(_cartList.isNotEmpty){
+          for (int index=0; index<_cartList.length;index++){
+            await addToCartApi(_cartList[index], providerId: providerId);
+          }
         }
-      }
 
-      if(fromServiceCenterDialog){
-        Get.back();
-        customSnackBar("successfully_added_to_cart".tr,type : ToasterMessageType.success);
+        if(fromServiceCenterDialog){
+          Get.back();
+          customSnackBar("successfully_added_to_cart".tr,type : ToasterMessageType.success);
+        }
+      } catch (_) {
+        customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
       }
     }
     _isLoading = false;

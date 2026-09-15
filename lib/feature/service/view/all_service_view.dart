@@ -14,14 +14,17 @@ class AllServiceView extends StatefulWidget {
 
 class _AllServiceViewState extends State<AllServiceView> {
 
-  int availableServiceCount = 0;
+  int availableServiceCount = 1;
 
   @override
   void initState() {
     super.initState();
-    if(Get.find<LocationController>().getUserAddress() !=null){
-      availableServiceCount = Get.find<LocationController>().getUserAddress()!.availableServiceCountInZone!;
-    }
+    try {
+      final savedCount = Get.find<LocationController>().getUserAddress()?.availableServiceCountInZone;
+      if (savedCount != null && savedCount > 0) {
+        availableServiceCount = savedCount;
+      }
+    } catch (_) {}
   }
   @override
   Widget build(BuildContext context) {

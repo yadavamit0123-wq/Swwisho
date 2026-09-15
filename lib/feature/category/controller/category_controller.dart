@@ -79,13 +79,32 @@ class CategoryController extends GetxController implements GetxService {
     if(shouldUpdate){
       update();
     }
-    Response response = await categoryRepo.getSubCategoryList(categoryID);
-    if (response.statusCode == 200 && response.body['response_code'] == 'default_200') {
-      _subCategoryList= [];
-      response.body['content']['data'].forEach((category) =>
-          _subCategoryList!.addIf(CategoryModel.fromJson(category).isActive , CategoryModel.fromJson(category)));
-    } else {
-      _subCategoryList= [];
+    try {
+      Response response = await categoryRepo.getSubCategoryList(categoryID);
+      _subCategoryList = [];
+      if (response.statusCode == 200 && response.body is Map) {
+        dynamic list;
+        final content = response.body['content'];
+        if (content is Map) {
+          list = content['data'];
+        } else if (content is List) {
+          list = content;
+        }
+        if (list is List) {
+          for (final category in list) {
+            try {
+              if (category is Map) {
+                final model = CategoryModel.fromJson(Map<String, dynamic>.from(category));
+                if (model.isActive != false) {
+                  _subCategoryList!.add(model);
+                }
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {
+      _subCategoryList = [];
     }
     update();
   }

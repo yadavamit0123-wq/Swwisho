@@ -146,20 +146,20 @@ class BookingDetailsContent {
       });
 
   BookingDetailsContent.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    bookingId = json['booking_id'];
-    readableId = json['readable_id'].toString();
-    customerId = json['customer_id'];
-    providerId = json['provider_id'];
-    zoneId = json['zone_id'];
-    bookingStatus = json['booking_status'];
-    isPaid = json['is_paid'];
-    paymentMethod = json['payment_method'];
-    transactionId = json['transaction_id'];
+    id = json['id']?.toString();
+    bookingId = json['booking_id']?.toString();
+    readableId = json['readable_id']?.toString();
+    customerId = json['customer_id']?.toString();
+    providerId = json['provider_id']?.toString();
+    zoneId = json['zone_id']?.toString();
+    bookingStatus = json['booking_status']?.toString();
+    isPaid = int.tryParse(json['is_paid']?.toString() ?? '');
+    paymentMethod = json['payment_method']?.toString();
+    transactionId = json['transaction_id']?.toString();
     totalBookingAmount = double.tryParse(json['total_booking_amount'].toString());
-    commission = json['comission'];
-    gstOnCommission = json['gst_on_comission'];
-    travelingCharge = json['traveling_charge'];
+    commission = num.tryParse(json['comission']?.toString() ?? '');
+    gstOnCommission = num.tryParse(json['gst_on_comission']?.toString() ?? '');
+    travelingCharge = num.tryParse(json['traveling_charge']?.toString() ?? '');
     totalTaxAmount = double.tryParse(json['total_tax_amount'].toString());
     totalDiscountAmount = double.tryParse(json['total_discount_amount'].toString());
     serviceSchedule = json['service_schedule'];
@@ -168,31 +168,38 @@ class BookingDetailsContent {
     updatedAt = json['updated_at'];
     categoryId = json['category_id'];
     subCategoryId = json['sub_category_id'];
-    if (json['detail'] != null) {
+    if (json['detail'] is List) {
       bookingDetails = <ItemService>[];
-      json['detail'].forEach((v) {
-        bookingDetails!.add(ItemService.fromJson(v));
-      });
+      for (final v in json['detail']) {
+        try {
+          bookingDetails!.add(ItemService.fromJson(Map<String, dynamic>.from(v)));
+        } catch (_) {}
+      }
     }
-    if (json['schedule_histories'] != null) {
+    if (json['schedule_histories'] is List) {
       scheduleHistories = <ScheduleHistories>[];
-      json['schedule_histories'].forEach((v) {
-        scheduleHistories!.add(ScheduleHistories.fromJson(v));
-      });
+      for (final v in json['schedule_histories']) {
+        try {
+          scheduleHistories!.add(ScheduleHistories.fromJson(Map<String, dynamic>.from(v)));
+        } catch (_) {}
+      }
     }
-    if (json['status_histories'] != null) {
+    if (json['status_histories'] is List) {
       statusHistories = <StatusHistories>[];
-      json['status_histories'].forEach((v) {
-
-        statusHistories!.add(StatusHistories.fromJson(v));
-      });
+      for (final v in json['status_histories']) {
+        try {
+          statusHistories!.add(StatusHistories.fromJson(Map<String, dynamic>.from(v)));
+        } catch (_) {}
+      }
     }
 
-    if (json['booking_partial_payments'] != null) {
+    if (json['booking_partial_payments'] is List) {
       partialPayments = <PartialPayment>[];
-      json['booking_partial_payments'].forEach((v) {
-        partialPayments!.add(PartialPayment.fromJson(v));
-      });
+      for (final v in json['booking_partial_payments']) {
+        try {
+          partialPayments!.add(PartialPayment.fromJson(Map<String, dynamic>.from(v)));
+        } catch (_) {}
+      }
     }
 
     serviceAddress = json['service_address'] != null
@@ -209,9 +216,9 @@ class BookingDetailsContent {
         : null;
     totalCampaignDiscountAmount = double.tryParse(json['total_campaign_discount_amount'].toString());
     totalCouponDiscountAmount = double.tryParse(json['total_coupon_discount_amount'].toString());
-    bookingOtp = json["booking_otp"].toString();
-    photoEvidence = json["evidence_photos"]!=null? json["evidence_photos"].cast<String>(): [];
-    photoEvidenceFullPath = json["evidence_photos_full_path"]!=null? json["evidence_photos_full_path"].cast<String>(): [];
+    bookingOtp = json["booking_otp"]?.toString();
+    photoEvidence = json["evidence_photos"] is List ? List<String>.from(json["evidence_photos"].map((e) => e.toString())) : [];
+    photoEvidenceFullPath = json["evidence_photos_full_path"] is List ? List<String>.from(json["evidence_photos_full_path"].map((e) => e.toString())) : [];
     extraFee = double.tryParse(json["extra_fee"].toString());
     additionalCharge = double.tryParse(json['additional_charge'].toString());
     totalReferralDiscountAmount = double.tryParse(json['total_referral_discount_amount'].toString());
@@ -219,11 +226,11 @@ class BookingDetailsContent {
     time = json['time'];
     startDate = json['startDate'];
     endDate = json['endDate'];
-    totalCount = json['totalCount'];
-    bookingType = json['bookingType'];
-    weekNames = json['weekNames']?.cast<String>();
-    completedCount = json['completedCount'];
-    canceledCount = json['canceledCount'];
+    totalCount = int.tryParse(json['totalCount']?.toString() ?? '');
+    bookingType = json['bookingType']?.toString();
+    weekNames = json['weekNames'] is List ? List<String>.from(json['weekNames'].map((e) => e.toString())) : null;
+    completedCount = int.tryParse(json['completedCount']?.toString() ?? '');
+    canceledCount = int.tryParse(json['canceledCount']?.toString() ?? '');
     nextService = json['nextService'] != null
         ? RepeatBooking.fromJson(json['nextService'])
         : null;

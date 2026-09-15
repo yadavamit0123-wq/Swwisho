@@ -10,7 +10,7 @@ class OnBoardingScreen extends GetView<OnBoardController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  const Color(0xfff2f5f9),
+      backgroundColor: Colors.white,
       body: AppUpgradeWrapper(
         child: GetBuilder<OnBoardController>(builder: (onBoardingController){
           return Column(

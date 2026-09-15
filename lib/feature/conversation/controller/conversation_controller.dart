@@ -357,16 +357,30 @@ class ConversationController extends GetxController with GetSingleTickerProvider
       _conversationList = null;
     }
     _messageOffset = offset;
-    Response response = await conversationRepo.getConversation(channelID, offset);
-    if(response.statusCode == 200){
-      if(!isFromPagination){
-        _conversationList = [];
+    try {
+      Response response = await conversationRepo.getConversation(channelID, offset);
+      final content = response.body is Map ? response.body['content'] : null;
+      if(response.statusCode == 200 && content is Map){
+        if(!isFromPagination){
+          _conversationList = [];
+        }
+        _conversationList ??= [];
+        if (content['data'] is List) {
+          for (final conversation in content['data']) {
+            try {
+              if (conversation is Map) {
+                _conversationList!.add(ConversationData.fromJson(Map<String, dynamic>.from(conversation)));
+              }
+            } catch (_) {}
+          }
+        }
+        _messagePageSize = int.tryParse(content['last_page']?.toString() ?? '') ?? _messagePageSize;
+      }else{
+        _conversationList ??= [];
+        ApiChecker.checkApi(response);
       }
-      response.body['content']['data'].forEach((conversation){_conversationList!.add(ConversationData.fromJson(conversation));
-      _messagePageSize =  response.body['content']['last_page'];
-      });
-    }else{
-      ApiChecker.checkApi(response);
+    } catch (_) {
+      _conversationList ??= [];
     }
     update();
   }

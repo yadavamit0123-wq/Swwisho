@@ -35,15 +35,19 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
         builder: (serviceController) {
           if(serviceController.service != null || widget.serviceID == null){
             if(serviceController.service != null && serviceController.service!.id != null &&  widget.serviceID != null){
-              Service? service = serviceController.service;
-              Discount discount = PriceConverter.discountCalculation(service!);
+              Service service = serviceController.service!;
+              Discount discount;
+              try {
+                discount = PriceConverter.discountCalculation(service);
+              } catch (_) {
+                discount = Discount(discountAmount: 0.0, discountAmountType: 'amount');
+              }
               double lowestPrice = 0.0;
-              if(service.variationsAppFormat!.zoneWiseVariations != null){
-                lowestPrice = service.variationsAppFormat!.zoneWiseVariations![0].price!.toDouble();
-                for (var i = 0; i < service.variationsAppFormat!.zoneWiseVariations!.length; i++) {
-                  if (service.variationsAppFormat!.zoneWiseVariations![i].price! < lowestPrice) {
-                    lowestPrice = service.variationsAppFormat!.zoneWiseVariations![i].price!.toDouble();
-                  }
+              final zoneWiseVariations = service.variationsAppFormat?.zoneWiseVariations ?? [];
+              for (final variation in zoneWiseVariations) {
+                final price = (variation.price ?? 0).toDouble();
+                if (lowestPrice == 0.0 || price < lowestPrice) {
+                  lowestPrice = price;
                 }
               }
               return  FooterBaseView(
@@ -51,7 +55,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                 child: SizedBox(
                   width: Dimensions.webMaxWidth,
                   child: DefaultTabController(
-                    length: Get.find<ServiceDetailsController>().service!.faqs!.isNotEmpty ? 3 :2,
+                    length: (service.faqs?.isNotEmpty ?? false) ? 3 :2,
                     child: Column(
                       children: [
                         if(!ResponsiveHelper.isMobile(context) && !ResponsiveHelper.isTab(context))
@@ -123,7 +127,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                                     ),
                                     tabBar: TabBar(
                                         padding: const EdgeInsets.only(top: Dimensions.paddingSizeMini),
-                                        unselectedLabelColor: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.4),
+                                        unselectedLabelColor: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.4),
                                         controller: serviceTabController.controller!,
                                         labelColor:Get.isDarkMode? Colors.white : Theme.of(context).primaryColor,
                                         labelStyle: robotoBold.copyWith(
@@ -159,18 +163,18 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                         //Tab Bar View
                         GetBuilder<ServiceTabController>(
                           initState: (state){
-                            Get.find<ServiceTabController>().getServiceReview(serviceController.service!.id!,1);
+                            Get.find<ServiceTabController>().getServiceReview(service.id ?? '', 1);
                           },
                           builder: (controller){
                             Widget tabBarView = TabBarView(
                               controller: controller.controller,
                               children: [
-                                SingleChildScrollView(child: ServiceOverview(description:service.description!)),
-                                if(Get.find<ServiceDetailsController>().service!.faqs!.isNotEmpty)
+                                SingleChildScrollView(child: ServiceOverview(description: service.description ?? '')),
+                                if(service.faqs?.isNotEmpty ?? false)
                                   const SingleChildScrollView(child: ServiceDetailsFaqSection()),
                                 if(controller.reviewList != null)
                                   SingleChildScrollView(
-                                    child: ServiceDetailsReview(serviceID: serviceController.service!.id!,),
+                                    child: ServiceDetailsReview(serviceID: service.id ?? '',),
                                   )
                                 else
                                   const EmptyReviewWidget()

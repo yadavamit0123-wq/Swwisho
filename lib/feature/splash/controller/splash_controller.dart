@@ -46,12 +46,16 @@ class SplashController extends GetxController implements GetxService {
             if(_configModel?.content?.maintenanceMode?.maintenanceTypeAndDuration?.maintenanceDuration == 'customize'){
 
               DateTime now = DateTime.now();
-              DateTime specifiedDateTime = DateTime.parse(_configModel!.content!.maintenanceMode!.maintenanceTypeAndDuration!.startDate!);
+              DateTime? specifiedDateTime = DateTime.tryParse(
+                _configModel?.content?.maintenanceMode?.maintenanceTypeAndDuration?.startDate ?? '',
+              );
 
-              Duration difference = specifiedDateTime.difference(now);
+              if(specifiedDateTime != null){
+                Duration difference = specifiedDateTime.difference(now);
 
-              if(difference.inMinutes > 0 && (difference.inMinutes < 60 || difference.inMinutes == 60)){
-                _startTimer(specifiedDateTime);
+                if(difference.inMinutes > 0 && difference.inMinutes <= 60){
+                  _startTimer(specifiedDateTime);
+                }
               }
             }
           }

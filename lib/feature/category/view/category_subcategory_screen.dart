@@ -13,26 +13,37 @@ class CategorySubCategoryScreen extends StatefulWidget {
 class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
   AutoScrollController? scrollController;
   String? categoryIndex;
-  int availableServiceCount = 0;
+
+  int get _selectedIndex => int.tryParse(categoryIndex ?? '0') ?? 0;
 
   @override
   void initState() {
+    super.initState();
     scrollController = AutoScrollController(
       viewportBoundaryGetter: () => Rect.fromLTRB(0, 0, 0, MediaQuery.of(context).padding.bottom),
       axis: Axis.horizontal,
     );
-    scrollController!.scrollToIndex(int.tryParse(widget.categoryIndex) ?? 0, preferPosition: AutoScrollPosition.middle);
-    scrollController!.highlight(int.tryParse(widget.categoryIndex) ?? 0);
+    categoryIndex = widget.categoryIndex;
 
-    if(Get.find<LocationController>().getUserAddress() !=null){
-      availableServiceCount = Get.find<LocationController>().getUserAddress()!.availableServiceCountInZone!;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await scrollController?.scrollToIndex(_selectedIndex, preferPosition: AutoScrollPosition.middle);
+        await scrollController?.highlight(_selectedIndex);
+      } catch (_) {}
+    });
 
-    Get.find<CategoryController>().getCategoryList(false);
-    categoryIndex = widget.categoryIndex ;
-    Get.find<CategoryController>().getSubCategoryList(widget.categoryID, shouldUpdate: false);
+    _loadCategories();
+  }
 
-    super.initState();
+  Future<void> _loadCategories() async {
+    try {
+      // Category/sub-category lists are zone filtered, so make sure the zone
+      // header exists before firing the requests.
+      await HomeScreen.ensureZoneHeader();
+      final categoryController = Get.find<CategoryController>();
+      categoryController.getCategoryList(false);
+      await categoryController.getSubCategoryList(widget.categoryID, shouldUpdate: false);
+    } catch (_) {}
   }
 
   @override
@@ -45,14 +56,13 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
           body: FooterBaseView(
             child: SizedBox(
               width: Dimensions.webMaxWidth,
-              child: availableServiceCount > 0 ?
-              CustomScrollView(
+              child: CustomScrollView(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 slivers: [
                   SliverToBoxAdapter(child: SizedBox(height: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtraLarge : Dimensions.paddingSizeExtraSmall,),),
                   SliverToBoxAdapter(
-                    child: (categoryController.categoryList != null && !categoryController.isSearching!) ?
+                    child: (categoryController.categoryList != null && !(categoryController.isSearching ?? false)) ?
                     Center(
                       child: Container(
                         height:ResponsiveHelper.isDesktop(context) ? 140 : ResponsiveHelper.isTab(context)? 140 : 130,
@@ -78,12 +88,18 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
                               index: index,
                               child: InkWell(
                                 onTap: () async {
-                                  categoryIndex = index.toString();
-                                  Get.find<CategoryController>().getSubCategoryList(categoryModel.id!);
-                                  await scrollController!.scrollToIndex( index, preferPosition: AutoScrollPosition.middle,
-                                    duration: const Duration(milliseconds: 500)
-                                  );
-                                  await scrollController!.highlight(index);
+                                  final id = categoryModel.id;
+                                  if (id == null || id.isEmpty) {
+                                    return;
+                                  }
+                                  setState(() => categoryIndex = index.toString());
+                                  Get.find<CategoryController>().getSubCategoryList(id);
+                                  try {
+                                    await scrollController?.scrollToIndex(index, preferPosition: AutoScrollPosition.middle,
+                                      duration: const Duration(milliseconds: 250),
+                                    );
+                                    await scrollController?.highlight(index);
+                                  } catch (_) {}
                                 },
                                 hoverColor: Colors.transparent,
                                 child: Container(
@@ -91,7 +107,7 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
 
                                   margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall),
                                   decoration: BoxDecoration(
-                                    color: index != int.parse(categoryIndex!) ? Theme.of(context).primaryColorLight : Theme.of(context).colorScheme.primary,
+                                    color: index != _selectedIndex ? Theme.of(context).primaryColorLight : Theme.of(context).colorScheme.primary,
                                     borderRadius: const BorderRadius.all(Radius.circular(Dimensions.radiusDefault), ),
                                   ),
                                   child: Column(
@@ -104,16 +120,16 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
                                             fit: BoxFit.cover,
                                             height: ResponsiveHelper.isDesktop(context) ? 50 : ResponsiveHelper.isTab(context)?40 :30,
                                             width: ResponsiveHelper.isDesktop(context) ? 50 : ResponsiveHelper.isTab(context)?40 :30,
-                                            image: '${categoryController.categoryList![index].imageFullPath}',
+                                            image: categoryModel.imageFullPath ?? '',
                                           ),
                                         ),
                                         const SizedBox(height: Dimensions.paddingSizeSmall,),
                                         Padding(
                                           padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-                                          child: Text(categoryController.categoryList![index].name!,
+                                          child: Text(categoryModel.name ?? '',
                                             style: robotoRegular.copyWith(
                                                 fontSize: Dimensions.fontSizeSmall,
-                                                color:index==int.parse(categoryIndex!)? Colors.white:Colors.black
+                                                color:index==_selectedIndex? Colors.white:Colors.black
                                             ),
                                             maxLines: 2,textAlign: TextAlign.center, overflow: TextOverflow.ellipsis,
                                           ),
@@ -146,8 +162,7 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
                     isScrollable: true,
                   ),
                 ],
-              ) :
-              SizedBox( height: MediaQuery.of(context).size.height*.6, child: const ServiceNotAvailableScreen()),
+              ),
             ),
           ),
         );

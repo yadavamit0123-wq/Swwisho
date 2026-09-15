@@ -67,20 +67,26 @@ class ServiceBookingController extends GetxController implements GetxService {
     if (!isFromPagination) {
       _bookingList = null;
     }
-    Response response = await serviceBookingRepo.getBookingList(offset: offset, bookingStatus: bookingStatus, serviceType: serviceType);
-    if (response.statusCode == 200) {
-      ServiceBookingList serviceBookingModel = ServiceBookingList.fromJson(
-          response.body);
-      if (!isFromPagination) {
-        _bookingList = [];
+    try {
+      Response response = await serviceBookingRepo.getBookingList(offset: offset, bookingStatus: bookingStatus, serviceType: serviceType);
+      if (response.statusCode == 200 && response.body is Map) {
+        ServiceBookingList serviceBookingModel = ServiceBookingList.fromJson(
+            Map<String, dynamic>.from(response.body));
+        if (!isFromPagination) {
+          _bookingList = [];
+        }
+        _bookingList ??= [];
+        _bookingList!.addAll(serviceBookingModel.content?.bookingModel ?? []);
+        _bookingListPageSize = int.tryParse(
+          (response.body['content'] is Map ? response.body['content']['last_page'] : null)?.toString() ?? '',
+        ) ?? 1;
+        _bookingContent = serviceBookingModel.content;
+      } else {
+        _bookingList ??= [];
+        ApiChecker.checkApi(response);
       }
-      for (var element in serviceBookingModel.content!.bookingModel!) {
-        _bookingList!.add(element);
-      }
-      _bookingListPageSize = response.body['content']['last_page'];
-      _bookingContent = serviceBookingModel.content!;
-    } else {
-      ApiChecker.checkApi(response);
+    } catch (_) {
+      _bookingList ??= [];
     }
     update();
   }
@@ -89,15 +95,23 @@ class ServiceBookingController extends GetxController implements GetxService {
   Future<void> rebook(String bookingId, {bool isBack = false}) async {
     _isLoading = true;
     update();
-    Response response = await serviceBookingRepo.addRebookToServer(bookingId);
-    _isLoading = false;
-    update();
-    if (response.statusCode == 200) {
-      if(isBack){
-        Get.back();
+    try {
+      Response response = await serviceBookingRepo.addRebookToServer(bookingId);
+      if (response.statusCode == 200) {
+        if(isBack){
+          Get.back();
+        }
+        Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
+        final message = (response.body is Map ? response.body['message'] : null)?.toString();
+        customSnackBar(message ?? 'success'.tr, type : ToasterMessageType.success);
+      } else {
+        ApiChecker.checkApi(response);
       }
-      Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
-      customSnackBar(response.body['message'], type : ToasterMessageType.success);
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    } finally {
+      _isLoading = false;
+      update();
     }
   }
 
@@ -108,55 +122,78 @@ class ServiceBookingController extends GetxController implements GetxService {
     _isLoading = true;
     update();
 
-    Get.dialog(const CustomLoader(), barrierDismissible: true);
+    bool loaderOpen = false;
+    try {
+      Get.dialog(const CustomLoader(), barrierDismissible: false);
+      loaderOpen = true;
 
-    Response response = await serviceBookingRepo.rebookCheck(bookingId);
+      Response response = await serviceBookingRepo.rebookCheck(bookingId);
 
-    Get.back();
+      if (loaderOpen && (Get.isDialogOpen ?? false)) {
+        Get.back();
+      }
+      loaderOpen = false;
 
-    dynamic body = response.body;
-    Map<String, dynamic> jsonBody;
-
-    if (body is String) {
-      jsonBody = jsonDecode(body);
-    } else if (body is Map) {
-      jsonBody = Map<String, dynamic>.from(body);
-    } else {
-      jsonBody = jsonDecode(body.toString());
-    }
-
-    serviceAvailability = ServiceAvailabilityModel.fromJson(jsonBody);
-    _isLoading = false;
-    update();
-    if(response.statusCode == 200) {
-
-      for(int i=0; i<serviceAvailability!.content!.services!.length; i++) {
-        if (!_isPriceChanged && serviceAvailability!.content!.services![i].isPriceChanged == 1) {
-          _isPriceChanged = true;
-        }
-        if (!_isNotAvailable && serviceAvailability!.content!.services![i].isAvailable == 0) {
-          _isNotAvailable = true;
-        }
-        update();
+      if (response.statusCode != 200) {
+        ApiChecker.checkApi(response);
+        return;
       }
 
-      if(serviceAvailability!.content!.isProviderAvailable! == 1 && !_isNotAvailable && !_isPriceChanged) {
-        await rebook(bookingId);
-      } else if (serviceAvailability!.content!.isProviderAvailable! == 0) {
+      Map<String, dynamic> jsonBody = {};
+      final dynamic body = response.body;
+      try {
+        if (body is Map) {
+          jsonBody = Map<String, dynamic>.from(body);
+        } else if (body is String && body.isNotEmpty) {
+          final decoded = jsonDecode(body);
+          if (decoded is Map) {
+            jsonBody = Map<String, dynamic>.from(decoded);
+          }
+        }
+      } catch (_) {}
+
+      try {
+        serviceAvailability = ServiceAvailabilityModel.fromJson(jsonBody);
+      } catch (_) {
+        serviceAvailability = null;
+      }
+
+      final services = serviceAvailability?.content?.services ?? [];
+      for (final service in services) {
+        if (service.isPriceChanged == 1) {
+          _isPriceChanged = true;
+        }
+        if (service.isAvailable == 0) {
+          _isNotAvailable = true;
+        }
+      }
+      update();
+
+      final isProviderAvailable = serviceAvailability?.content?.isProviderAvailable;
+
+      if (isProviderAvailable == 0) {
         if (ResponsiveHelper.isDesktop(Get.context)) {
-           Get.dialog(Center(child: RebookWarningBottomSheet(bookingId: bookingId)));
+          Get.dialog(Center(child: RebookWarningBottomSheet(bookingId: bookingId)));
         } else {
           Get.bottomSheet(RebookWarningBottomSheet(bookingId: bookingId), backgroundColor: Colors.transparent, isScrollControlled: true);
         }
       } else if (_isNotAvailable || _isPriceChanged) {
         if (ResponsiveHelper.isDesktop(Get.context)) {
-          Get.dialog(Center(child: ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(serviceAvailability!.content!.services),)));
+          Get.dialog(Center(child: ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(services),)));
         } else {
-          Get.bottomSheet(ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(serviceAvailability!.content!.services)), backgroundColor: Colors.transparent, isScrollControlled: true);
+          Get.bottomSheet(ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(services)), backgroundColor: Colors.transparent, isScrollControlled: true);
         }
+      } else {
+        await rebook(bookingId);
       }
-    }else{
-      ApiChecker.checkApi(response);
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    } finally {
+      if (loaderOpen && (Get.isDialogOpen ?? false)) {
+        Get.back();
+      }
+      _isLoading = false;
+      update();
     }
   }
 
@@ -191,8 +228,8 @@ class ServiceBookingController extends GetxController implements GetxService {
 
   bool checkAllServiceAvailable (List<Services>? services) {
     bool available = true;
-    for (int i = 0; i< services!.length; i++) {
-      if(available && services[i].isAvailable == 1) {
+    for (final service in services ?? <Services>[]) {
+      if(available && service.isAvailable == 1) {
         available = false;
       }
     }

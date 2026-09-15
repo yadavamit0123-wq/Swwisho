@@ -161,7 +161,7 @@ class CheckOutController extends GetxController implements GetxService{
    String? offlinePaymentId, String? customerInformation, double? bookingAmount, int? selectedOfflinePaymentIndex
  })async{
 
-   String zoneId = Get.find<LocationController>().getUserAddress()!.zoneId.toString();
+   String zoneId = Get.find<LocationController>().getUserAddress()?.zoneId ?? address.zoneId ?? '';
    var scheduleController = Get.find<ScheduleController>();
 
    ServiceType serviceType = scheduleController.selectedServiceType;
@@ -181,7 +181,7 @@ class CheckOutController extends GetxController implements GetxService{
    _isLoading = true;
    update();
 
-
+   try {
    if(Get.find<CartController>().cartList.isNotEmpty){
      Response response = await checkoutRepo.placeBookingRequest(
        paymentMethod : paymentMethod,
@@ -214,7 +214,8 @@ class CheckOutController extends GetxController implements GetxService{
 
       }else{
 
-        String? bookingId = response.body['content']['booking_id'][0];
+        final bookingIds = response.body['content']['booking_id'];
+        String? bookingId = (bookingIds is List && bookingIds.isNotEmpty) ? bookingIds.first?.toString() : bookingIds?.toString();
 
         customSnackBar('now_pay_you_bill_using_the_payment_method'.tr,toasterTitle: 'your_booking_has_been_placed_successfully'.tr, type: ToasterMessageType.success, duration: 4);
 
@@ -239,9 +240,12 @@ class CheckOutController extends GetxController implements GetxService{
    else{
      Get.offNamed(RouteHelper.getOrderSuccessRoute('fail'));
    }
-
-   _isLoading  = false;
-   update();
+   } catch (_) {
+     customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+   } finally {
+     _isLoading  = false;
+     update();
+   }
  }
 
  _saveTokenAndHandelPhoneVerification({String? token, SignUpBody? userInfo, String? paymentMethod}){
@@ -365,9 +369,10 @@ class CheckOutController extends GetxController implements GetxService{
  Future<void> submitOfflinePaymentData({required String bookingId, required String offlinePaymentId, required offlinePaymentInfo, required int isPartialPayment , required String fromPage, SignUpBody? newUserInfo, String? readableId}) async {
    _isLoading = true;
    update();
+   try {
    Response? response = await checkoutRepo.submitOfflinePaymentData(bookingId: bookingId, offlinePaymentId: offlinePaymentId, offlinePaymentInfo: offlinePaymentInfo, isPartialPayment: isPartialPayment);
 
-   if (response!.statusCode == 200) {
+   if (response?.statusCode == 200) {
      customSnackBar('now_wait_for_your_payment_to_be_verified'.tr,toasterTitle: "your_payment_confirm_successfully".tr, type: ToasterMessageType.success);
 
      if(fromPage == "checkout"){
@@ -394,29 +399,40 @@ class CheckOutController extends GetxController implements GetxService{
         _saveTokenAndHandelPhoneVerification(userInfo: newUserInfo);
       });
     }
-   } else {
+   } else if (response != null) {
      ApiChecker.checkApi(response);
    }
-
-   _isLoading = false;
-   update();
+   } catch (_) {
+     customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+   } finally {
+     _isLoading = false;
+     update();
+   }
  }
 
- Future<void> switchPaymentMethod({required String bookingId,  required String paymentMethod,  int isPartial = 0,  String? offlinePaymentId, String? offlinePaymentInfo, }) async {
+ /// [shouldCloseDialog] is false when the caller already shows its own loader
+ /// and closes it itself, otherwise the extra pop removes the screen behind it.
+ Future<void> switchPaymentMethod({required String bookingId,  required String paymentMethod,  int isPartial = 0,  String? offlinePaymentId, String? offlinePaymentInfo, bool shouldCloseDialog = true, }) async {
    _isLoading = true;
    update();
-   Response? response = await checkoutRepo.switchPaymentMethod(bookingId: bookingId, paymentMethod: paymentMethod, offlinePaymentId: offlinePaymentId, offlinePaymentInfo: offlinePaymentInfo, isPartial: isPartial);
+   try {
+     Response? response = await checkoutRepo.switchPaymentMethod(bookingId: bookingId, paymentMethod: paymentMethod, offlinePaymentId: offlinePaymentId, offlinePaymentInfo: offlinePaymentInfo, isPartial: isPartial);
 
-   if (response!.statusCode == 200) {
-     await Get.find<BookingDetailsController>().getBookingDetails(bookingId: bookingId );
-     Get.back();
-     customSnackBar("your_payment_confirm_successfully".tr, type: ToasterMessageType.success, showDefaultSnackBar: false);
-   } else {
-     ApiChecker.checkApi(response, showDefaultToaster: false);
+     if (response?.statusCode == 200) {
+       await Get.find<BookingDetailsController>().getBookingDetails(bookingId: bookingId );
+       if (shouldCloseDialog && (Get.isDialogOpen ?? false)) {
+         Get.back();
+       }
+       customSnackBar("your_payment_confirm_successfully".tr, type: ToasterMessageType.success, showDefaultSnackBar: false);
+     } else if (response != null) {
+       ApiChecker.checkApi(response, showDefaultToaster: false);
+     }
+   } catch (_) {
+     customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+   } finally {
+     _isLoading = false;
+     update();
    }
-
-   _isLoading = false;
-   update();
  }
 
 

@@ -7,10 +7,11 @@ class ServiceAvailabilityModel {
   ServiceAvailabilityModel({this.responseCode, this.message, this.content});
 
   ServiceAvailabilityModel.fromJson(Map<String, dynamic> json) {
-    responseCode = json['response_code'];
-    message = json['message'];
-    content =
-    json['content'] != null ? Content.fromJson(json['content']) : null;
+    responseCode = json['response_code']?.toString();
+    message = json['message']?.toString();
+    content = json['content'] is Map
+        ? Content.fromJson(Map<String, dynamic>.from(json['content']))
+        : null;
   }
 
   Map<String, dynamic> toJson() {
@@ -32,13 +33,17 @@ class Content {
   Content({this.isProviderAvailable, this.isServiceInfoUnchanged, this.services});
 
   Content.fromJson(Map<String, dynamic> json) {
-    isProviderAvailable = json['is_provider_available'];
-    isServiceInfoUnchanged = json['is_service_info_unchanged'];
-    if (json['services'] != null) {
+    isProviderAvailable = int.tryParse(json['is_provider_available']?.toString() ?? '');
+    isServiceInfoUnchanged = int.tryParse(json['is_service_info_unchanged']?.toString() ?? '');
+    if (json['services'] is List) {
       services = <Services>[];
-      json['services'].forEach((v) {
-        services!.add(Services.fromJson(v));
-      });
+      for (final v in json['services']) {
+        try {
+          if (v is Map) {
+            services!.add(Services.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
   }
 
@@ -72,17 +77,13 @@ class Services {
         this.isPriceChanged});
 
   Services.fromJson(Map<String, dynamic> json) {
-    serviceId = json['service_id'];
-    serviceName = json['service_name'];
-    variantKey = json['variant_key'];
-    if(json['service_unit_cost'] != null){
-      serviceCost = double.parse(json['service_unit_cost'].toString());
-    }
-    if(json['booking_service_unit_cost'] != null) {
-      bookingServiceCost = double.parse(json['booking_service_unit_cost'].toString());
-    }
-    isAvailable = json['is_available'];
-    isPriceChanged = json['is_price_changed'];
+    serviceId = json['service_id']?.toString();
+    serviceName = json['service_name']?.toString();
+    variantKey = json['variant_key']?.toString();
+    serviceCost = double.tryParse(json['service_unit_cost']?.toString() ?? '');
+    bookingServiceCost = double.tryParse(json['booking_service_unit_cost']?.toString() ?? '');
+    isAvailable = int.tryParse(json['is_available']?.toString() ?? '');
+    isPriceChanged = int.tryParse(json['is_price_changed']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {

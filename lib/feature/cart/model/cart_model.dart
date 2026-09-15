@@ -73,26 +73,26 @@ class CartModel {
   Service? get service => _service;
   ProviderData? get provider => _provider;
 
-  String get serviceId => _serviceId!;
-  String get categoryId => _categoryId!;
-  String get variantKey => _variantKey!;
-  String get subCategoryId => _subCategoryId!;
+  String get serviceId => _serviceId ?? '';
+  String get categoryId => _categoryId ?? '';
+  String get variantKey => _variantKey ?? '';
+  String get subCategoryId => _subCategoryId ?? '';
 
-  num get price => _serviceCost!;
-  num get discountedPrice => _discountAmount!;
-  num get commission => _commission!;
-  num get gstOnCommission => _gstOnCommission!;
-  num get travelingCharge => _travelingCharge!;
-  num get campaignDiscountPrice => _campaignDiscountAmount!;
-  num get couponDiscountPrice => _couponDiscountAmount!;
-  num get referralDiscountAmount => _referralDiscountAmount!;
+  num get price => _serviceCost ?? 0;
+  num get discountedPrice => _discountAmount ?? 0;
+  num get commission => _commission ?? 0;
+  num get gstOnCommission => _gstOnCommission ?? 0;
+  num get travelingCharge => _travelingCharge ?? 0;
+  num get campaignDiscountPrice => _campaignDiscountAmount ?? 0;
+  num get couponDiscountPrice => _couponDiscountAmount ?? 0;
+  num get referralDiscountAmount => _referralDiscountAmount ?? 0;
   String? get couponCode => _couponCode;
   int? get couponRemainingUses => _couponRemainingUses;
-  num get taxAmount => _taxAmount!;
-  num get totalCost => _totalCost!;
-  num get serviceCost => _serviceCost!;
+  num get taxAmount => _taxAmount ?? 0;
+  num get totalCost => _totalCost ?? 0;
+  num get serviceCost => _serviceCost ?? 0;
   // ignore: unnecessary_getters_setters
-  int get quantity => _quantity!;
+  int get quantity => _quantity ?? 0;
 
   // ignore: unnecessary_getters_setters
   set quantity(int qty) => _quantity = qty;
@@ -109,26 +109,26 @@ class CartModel {
 }
 
   CartModel.fromJson(Map<String, dynamic> json) {
-    _id = json['id'];
-    _serviceId = json['service_id'];
-    _categoryId = json['category_id'];
-    _subCategoryId = json['sub_category_id'];
-    _variantKey = json['variant_key'];
-    _serviceCost = json['service_cost'];
-    _quantity = json['quantity'];
-    _discountAmount = json['discount_amount'];
-    _commission = json['comission'];
-    _gstOnCommission = json['gst_on_comission'];
-    _travelingCharge = json['traveling_charge'];
-    _campaignDiscountAmount = json['campaign_discount'];
-    _couponDiscountAmount = json['coupon_discount'];
-    _referralDiscountAmount = double.tryParse(json['referral_discount'].toString());
-    _couponCode = json['coupon_code'];
-    _couponRemainingUses = int.tryParse(json['remaining_uses'].toString());
-    _taxAmount = json['tax_amount'];
-    _totalCost = json['total_cost'];
-    _service = json['service'] != null ? Service.fromJson(json['service']) : null;
-    _provider = (json['provider'] != null ? ProviderData.fromJson(json['provider']) : null);
+    _id = json['id']?.toString();
+    _serviceId = json['service_id']?.toString();
+    _categoryId = json['category_id']?.toString();
+    _subCategoryId = json['sub_category_id']?.toString();
+    _variantKey = json['variant_key']?.toString();
+    _serviceCost = num.tryParse(json['service_cost']?.toString() ?? '');
+    _quantity = int.tryParse(json['quantity']?.toString() ?? '');
+    _discountAmount = num.tryParse(json['discount_amount']?.toString() ?? '');
+    _commission = num.tryParse(json['comission']?.toString() ?? '');
+    _gstOnCommission = num.tryParse(json['gst_on_comission']?.toString() ?? '');
+    _travelingCharge = num.tryParse(json['traveling_charge']?.toString() ?? '');
+    _campaignDiscountAmount = num.tryParse(json['campaign_discount']?.toString() ?? '');
+    _couponDiscountAmount = num.tryParse(json['coupon_discount']?.toString() ?? '');
+    _referralDiscountAmount = double.tryParse(json['referral_discount']?.toString() ?? '');
+    _couponCode = json['coupon_code']?.toString();
+    _couponRemainingUses = int.tryParse(json['remaining_uses']?.toString() ?? '');
+    _taxAmount = num.tryParse(json['tax_amount']?.toString() ?? '');
+    _totalCost = num.tryParse(json['total_cost']?.toString() ?? '');
+    _service = json['service'] is Map ? Service.fromJson(Map<String, dynamic>.from(json['service'])) : null;
+    _provider = json['provider'] is Map ? ProviderData.fromJson(Map<String, dynamic>.from(json['provider'])) : null;
 
   }
 
