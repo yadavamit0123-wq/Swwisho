@@ -255,6 +255,10 @@ class _HomeScreenState extends State<HomeScreen> {
           _error = 'Services load nahi ho paayi. Pull to refresh karke try karein.';
         }
       });
+
+      try {
+        Get.find<CategoryController>().seedCategoryList(categories);
+      } catch (_) {}
     } catch (e) {
       if (!mounted) {
         return;

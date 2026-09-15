@@ -21,6 +21,17 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSubCategories();
+  }
+
+  Future<void> _loadSubCategories() async {
+    try {
+      await HomeScreen.ensureZoneHeader();
+      final id = widget.categoryID ?? '';
+      if (id.isNotEmpty) {
+        await Get.find<CategoryController>().getSubCategoryList(id);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -29,28 +40,21 @@ class _SubCategoryScreenState extends State<SubCategoryScreen> {
         endDrawer:ResponsiveHelper.isDesktop(context) ? const MenuDrawer():null,
         appBar: CustomAppBar(title: widget.categoryTitle,),
       body: GetBuilder<CategoryController>(
-        initState: (state){
-          Get.find<CategoryController>().getSubCategoryList(widget.categoryID ?? "",shouldUpdate: false); //banner id is category here
-
-        },
         builder: (categoryController){
 
           return FooterBaseView(
+            isScrollView: false,
             isCenter: (categoryController.subCategoryList != null &&  categoryController.subCategoryList!.isEmpty),
-            child: SizedBox(
-              width: Dimensions.webMaxWidth,
-              child: CustomScrollView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: SizedBox(height:
-                    ResponsiveHelper.isDesktop(context)?Dimensions.paddingSizeExtraLarge:0,
-                    ),
+            child: CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: SizedBox(height:
+                  ResponsiveHelper.isDesktop(context)?Dimensions.paddingSizeExtraLarge:0,
                   ),
-                  const SubCategoryView(isScrollable: true,),
-                ],
-              ),
+                ),
+                const SubCategoryView(isScrollable: true,),
+              ],
             ),
           );
         }

@@ -166,7 +166,11 @@ class ServiceWidgetVertical extends StatelessWidget {
                       size: Dimensions.paddingSizeExtraLarge,
                     ),
                   ),
-                  Positioned.fill(child: RippleButton(onTap: () {
+                  Positioned.fill(child: RippleButton(onTap: () async {
+                    await HomeScreen.ensureZoneHeader();
+                    if (!context.mounted) {
+                      return;
+                    }
                     showModalBottomSheet(
                         useRootNavigator: true,
                         isScrollControlled: true,

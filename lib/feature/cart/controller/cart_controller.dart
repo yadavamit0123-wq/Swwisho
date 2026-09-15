@@ -411,22 +411,58 @@ class CartController extends GetxController implements GetxService {
 
   int isAvailableInCart(CartModel cartModel, Service service) {
     int index = -1;
+    final serviceId = service.id ?? '';
+    if (serviceId.isEmpty) {
+      return index;
+    }
+
     for (var cart in _cartList) {
       if(cart.service != null){
-        if(cart.service!.id!.contains(service.id!)) {
-          service.variationsAppFormat?.zoneWiseVariations?.forEach((variation) {
-            if(variation.variantKey == cart.variantKey && variation.price == cart.serviceCost) {
-
-              if(cart.variantKey == cartModel.variantKey) {
-                index = _cartList.indexOf(cart);
-              }
-            }
-          });
-
+        if((cart.service!.id ?? '').contains(serviceId)) {
+          if(cart.variantKey == cartModel.variantKey) {
+            index = _cartList.indexOf(cart);
+            break;
+          }
         }
       }
     }
     return index;
+  }
+
+  void _addInitialCartItem({
+    required Service service,
+    required String variantKey,
+    required num price,
+  }) {
+    final serviceId = service.id ?? '';
+    if (serviceId.isEmpty || variantKey.isEmpty) {
+      return;
+    }
+
+    var cartModel = CartModel(
+      serviceId,
+      serviceId,
+      service.categoryId ?? '',
+      service.subCategoryId ?? '',
+      variantKey,
+      price,
+      0,
+      0, 0, 0, 0, 0, 0, 0,
+      "",
+      0,
+      service.tax ?? 0,
+      price,
+      service,
+    );
+
+    final index = isAvailableInCart(cartModel, service);
+    if (index != -1) {
+      cartModel = cartModel.copyWith(
+        id: _cartList[index].id,
+        quantity: _cartList[index].quantity,
+      );
+    }
+    _initialCartList.add(cartModel);
   }
 
   setInitialCartList(Service service) {
@@ -434,30 +470,49 @@ class CartController extends GetxController implements GetxService {
     _pendingCost = 0;
     _travelingCharge = 0;
     _initialCartList = [];
-    service.variationsAppFormat?.zoneWiseVariations?.forEach((variation) {
-      CartModel cartModel = CartModel(
-          service.id!,
-          service.id!,
-          service.categoryId!,
-          service.subCategoryId!,
-          variation.variantKey!,
-          variation.price!,
-          0,
-          0, 0, 0,0, 0, 0, 0,
-          "",
-          0,
-          service.tax ?? 0,
-          variation.price ?? 0,
-          service,
-      );
-      int index =  isAvailableInCart(cartModel, service);
-      if(index != -1) {
-        cartModel.copyWith(id: _cartList[index].id, quantity: _cartList[index].quantity);
-      }
-      _initialCartList.add(cartModel);
-    });
-    _isButton = false;
 
+    final zoneVariations = service.variationsAppFormat?.zoneWiseVariations ?? [];
+    if (zoneVariations.isNotEmpty) {
+      for (final variation in zoneVariations) {
+        final variantKey = variation.variantKey ?? variation.variantName ?? '';
+        if (variantKey.isEmpty) {
+          continue;
+        }
+        _addInitialCartItem(
+          service: service,
+          variantKey: variantKey,
+          price: variation.price ?? service.variationsAppFormat?.defaultPrice ?? 0,
+        );
+      }
+    }
+
+    if (_initialCartList.isEmpty) {
+      for (final variation in service.variations ?? <Variations>[]) {
+        final variantKey = variation.variantKey ?? variation.variant ?? '';
+        if (variantKey.isEmpty) {
+          continue;
+        }
+        _addInitialCartItem(
+          service: service,
+          variantKey: variantKey,
+          price: variation.price ?? 0,
+        );
+      }
+    }
+
+    if (_initialCartList.isEmpty) {
+      final defaultPrice = service.variationsAppFormat?.defaultPrice ?? 0;
+      if (defaultPrice > 0) {
+        _addInitialCartItem(
+          service: service,
+          variantKey: 'default',
+          price: defaultPrice,
+        );
+      }
+    }
+
+    _isButton = false;
+    update();
   }
 
   List<CartModel> _replaceCartList() {

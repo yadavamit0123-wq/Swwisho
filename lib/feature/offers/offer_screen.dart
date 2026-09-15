@@ -4,10 +4,11 @@ import 'package:demandium/utils/core_export.dart';
 import '../../utils/appp_upgrade_wrapper.dart';
 
 class OfferScreen extends StatefulWidget {
-  const OfferScreen({super.key}) ;
+  const OfferScreen({super.key});
   @override
   State<OfferScreen> createState() => _OfferScreenState();
 }
+
 class _OfferScreenState extends State<OfferScreen> {
   final ScrollController scrollController = ScrollController();
 
@@ -18,10 +19,14 @@ class _OfferScreenState extends State<OfferScreen> {
   }
 
   Future<void> _loadOffers() async {
-    // Offers are zone filtered, so the zone header must be set before the call
-    // or the API replies with an empty list.
-    await HomeScreen.ensureZoneHeader();
-    await Get.find<ServiceController>().getOffersList(1, true);
+    try {
+      await HomeScreen.ensureZoneHeader();
+      await Get.find<ServiceController>().getOffersList(1, true);
+    } catch (_) {
+      try {
+        await Get.find<ServiceController>().getOffersList(1, true);
+      } catch (_) {}
+    }
   }
 
   @override
@@ -30,79 +35,114 @@ class _OfferScreenState extends State<OfferScreen> {
     super.dispose();
   }
 
+  Widget _mobileBanner() {
+    return SizedBox(
+      height: 100,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            Images.offerBanner,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => ColoredBox(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          ColoredBox(
+            color: Colors.black54,
+            child: Center(
+              child: Text(
+                'current_offers'.tr,
+                style: robotoMedium.copyWith(
+                  color: Colors.white,
+                  fontSize: Dimensions.fontSizeExtraLarge,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      endDrawer:ResponsiveHelper.isDesktop(context) ? const MenuDrawer():null,
+      endDrawer: ResponsiveHelper.isDesktop(context) ? const MenuDrawer() : null,
       appBar: CustomAppBar(
         isBackButtonExist: false,
         title: 'offers'.tr,
       ),
       body: AppUpgradeWrapper(
         child: GetBuilder<ServiceController>(
-          builder: (serviceController){
-            return Stack(
-              children: [
+          builder: (serviceController) {
+            final offers = serviceController.offerBasedServiceList;
 
-                FooterBaseView(
-                  scrollController: scrollController,
-                  bottomPadding: false,
-                  child: SizedBox(
-                    width: Dimensions.webMaxWidth,
-                    child: Column(
-                      children: [
-                        !ResponsiveHelper.isMobile(context) && serviceController.offerBasedServiceList !=null && serviceController.offerBasedServiceList!.isNotEmpty ? Padding(
-                          padding: EdgeInsets.fromLTRB(
-                            Dimensions.paddingSizeDefault,
-                            Dimensions.fontSizeDefault,
-                            Dimensions.paddingSizeDefault,
-                            Dimensions.paddingSizeSmall,
-                          ),
-                          child: TitleWidget(
-                            title: 'current_offers'.tr,
-                          ),
-                        ):const SizedBox.shrink(),
-                        ResponsiveHelper.isMobile(context)?const SizedBox(height: 120,) : const SizedBox(height: Dimensions.paddingSizeDefault,),
-                        PaginatedListView(
+            return RefreshIndicator(
+              onRefresh: _loadOffers,
+              child: CustomScrollView(
+                controller: scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: ClampingScrollPhysics(),
+                ),
+                slivers: [
+                  if (ResponsiveHelper.isMobile(context))
+                    SliverToBoxAdapter(child: _mobileBanner()),
+
+                  if (!ResponsiveHelper.isMobile(context) &&
+                      offers != null &&
+                      offers.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          Dimensions.paddingSizeDefault,
+                          Dimensions.paddingSizeDefault,
+                          Dimensions.paddingSizeDefault,
+                          Dimensions.paddingSizeSmall,
+                        ),
+                        child: TitleWidget(title: 'current_offers'.tr),
+                      ),
+                    ),
+
+                  SliverToBoxAdapter(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: Dimensions.webMaxWidth,
+                          minHeight: offers == null
+                              ? MediaQuery.of(context).size.height * 0.5
+                              : 0,
+                        ),
+                        child: PaginatedListView(
                           scrollController: scrollController,
                           totalSize: serviceController.offerBasedServiceContent?.total,
-                          offset: serviceController.offerBasedServiceContent?.currentPage ,
-                          onPaginate: (int offset) async => await serviceController.getOffersList(offset, false),
+                          offset: serviceController.offerBasedServiceContent?.currentPage,
+                          onPaginate: (int offset) async =>
+                              await serviceController.getOffersList(offset, false),
+                          bottomPadding: Dimensions.paddingSizeExtraLarge,
                           itemView: ServiceViewVertical(
-                            service: serviceController.offerBasedServiceList,
+                            service: offers,
                             padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtraSmall : Dimensions.paddingSizeDefault,
-                              vertical: ResponsiveHelper.isDesktop(context) ? Dimensions.paddingSizeExtraSmall : 0,
+                              horizontal: ResponsiveHelper.isDesktop(context)
+                                  ? Dimensions.paddingSizeExtraSmall
+                                  : Dimensions.paddingSizeDefault,
+                              vertical: ResponsiveHelper.isDesktop(context)
+                                  ? Dimensions.paddingSizeExtraSmall
+                                  : Dimensions.paddingSizeSmall,
                             ),
                             type: 'others',
                             noDataType: NoDataType.offers,
                           ),
                         ),
-                      ],
-                    ),
-                  )
-                ),
-
-                ResponsiveHelper.isMobile(context) ?
-                Align(alignment: Alignment.topCenter, child: Stack(
-                  children: [
-                    Container(
-                      height: 120, width: MediaQuery.of(context).size.width,
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                    ),
-                    Image.asset(Images.offerBanner, width: Get.width, fit: BoxFit.cover, height: 100,),
-                    Container(
-                      color: Colors.black54, height: 100,
-                      child: Center(
-                        child: Text('current_offers'.tr,style: robotoMedium.copyWith(color: Colors.white,
-                          fontSize: Dimensions.fontSizeExtraLarge,
-                        )),
                       ),
-                    )
-                  ],
-                )) : const SizedBox.shrink(),
-              ],
+                    ),
+                  ),
+
+                  if (ResponsiveHelper.isDesktop(context))
+                    const SliverToBoxAdapter(child: FooterView()),
+                ],
+              ),
             );
           },
         ),

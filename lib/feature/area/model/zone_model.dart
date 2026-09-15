@@ -12,17 +12,21 @@ class ZoneModel {
   ZoneModel({this.id, this.name, this.formattedCoordinates, this.status, this.createdAt, this.updatedAt});
 
   ZoneModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    name = json['name'];
-    if (json['formatted_coordinates'] != null) {
+    id = json['id']?.toString();
+    name = json['name']?.toString();
+    if (json['formatted_coordinates'] is List) {
       formattedCoordinates = <Coordinates>[];
-      json['formatted_coordinates'].forEach((v) {
-        formattedCoordinates!.add(Coordinates.fromJson(v));
-      });
+      for (final v in json['formatted_coordinates']) {
+        try {
+          if (v is Map) {
+            formattedCoordinates!.add(Coordinates.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    status = json['status'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
+    status = int.tryParse(json['status']?.toString() ?? '');
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
 
   }
 

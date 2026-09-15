@@ -21,49 +21,83 @@ class ServiceAreaController extends GetxController implements GetxService{
   Set<Polygon> get polygone => _polygone;
 
 
-  Future<void> getZoneList({Map<String, GlobalKey>? globalKeyMap, bool reload = true}) async {
+  List<ZoneModel> _parseZoneList(dynamic data) {
+    final zones = <ZoneModel>[];
+    if (data is! Map) {
+      return zones;
+    }
 
-    LatLng currentLocation = const LatLng(0, 0);
+    final content = data['content'];
+    final list = content is Map
+        ? content['data']
+        : (content is List ? content : data['data']);
 
-
-    DataSyncHelper.fetchAndSyncData(
-      fetchFromLocal: ()=> serviceAreaRepo.getZoneList<CacheResponseData>(source: DataSourceEnum.local),
-      fetchFromClient: ()=> serviceAreaRepo.getZoneList(source: DataSourceEnum.client),
-      onResponse: (data, source) {
-        _zoneList = [];
-
-        data['content']['data'].forEach((zone) => _zoneList!.add(ZoneModel.fromJson(zone)));
-        List<Polygon> polygonList = [];
-        List<LatLng> currentLocationList = [];
-
-        for (int index = 0; index < _zoneList!.length; index++) {
-
-          List<LatLng> zoneLatLongList = [];
-          for (int subIndex = 0; subIndex < _zoneList![index].formattedCoordinates!.length; subIndex++) {
-            zoneLatLongList.add(LatLng(_zoneList![index].formattedCoordinates![subIndex].latitude!, _zoneList![index].formattedCoordinates![subIndex].longitude!));
+    if (list is List) {
+      for (final zone in list) {
+        try {
+          if (zone is Map) {
+            zones.add(ZoneModel.fromJson(Map<String, dynamic>.from(zone)));
           }
+        } catch (_) {}
+      }
+    }
+    return zones;
+  }
 
-          LatLng position =  computeCentroid(points: zoneLatLongList);
-          currentLocation = LatLng(position.latitude, position.longitude);
+  Set<Polygon> _buildPolygons(List<ZoneModel> zones) {
+    final polygonList = <Polygon>[];
 
-          polygonList.add(
-            Polygon(
-              polygonId: PolygonId('zone$index'),
-              points: zoneLatLongList,
-              strokeWidth: 2,
-              strokeColor: Get.theme.colorScheme.primary,
-              fillColor: Get.theme.colorScheme.primary.withValues(alpha: .2),
-            ),
-          );
+    for (int index = 0; index < zones.length; index++) {
+      final coordinates = zones[index].formattedCoordinates ?? [];
+      final zoneLatLongList = <LatLng>[];
 
-          currentLocationList.add(currentLocation);
-
+      for (final coordinate in coordinates) {
+        final lat = coordinate.latitude;
+        final lng = coordinate.longitude;
+        if (lat != null && lng != null) {
+          zoneLatLongList.add(LatLng(lat, lng));
         }
+      }
 
-        _polygone = HashSet<Polygon>.of(polygonList);
-        update();
-      },
-    );
+      if (zoneLatLongList.isEmpty) {
+        continue;
+      }
+
+      polygonList.add(
+        Polygon(
+          polygonId: PolygonId('zone$index'),
+          points: zoneLatLongList,
+          strokeWidth: 2,
+          strokeColor: Get.theme.colorScheme.primary,
+          fillColor: Get.theme.colorScheme.primary.withValues(alpha: .2),
+        ),
+      );
+    }
+
+    return HashSet<Polygon>.of(polygonList);
+  }
+
+  Future<void> getZoneList({Map<String, GlobalKey>? globalKeyMap, bool reload = true}) async {
+    if (reload || _zoneList == null) {
+      _zoneList = null;
+      update();
+    }
+
+    try {
+      await DataSyncHelper.fetchAndSyncData(
+        fetchFromLocal: ()=> serviceAreaRepo.getZoneList<CacheResponseData>(source: DataSourceEnum.local),
+        fetchFromClient: ()=> serviceAreaRepo.getZoneList(source: DataSourceEnum.client),
+        onResponse: (data, source) {
+          _zoneList = _parseZoneList(data);
+          _polygone = _buildPolygons(_zoneList ?? []);
+          update();
+        },
+      );
+    } catch (_) {
+    } finally {
+      _zoneList ??= [];
+      update();
+    }
   }
 
   Future<void> setMarker(List<ZoneModel> zoneList, Map<String, GlobalKey> globalKeymap) async {
@@ -71,17 +105,18 @@ class ServiceAreaController extends GetxController implements GetxService{
     List<Marker> markerList = [];
 
     for (int index = 0; index < zoneList.length; index++) {
-      List<LatLng> zoneLatLongList = [];
-      for (int subIndex = 0; subIndex < zoneList[index].formattedCoordinates!.length; subIndex++) {
-        zoneLatLongList.add(LatLng(zoneList[index].formattedCoordinates![subIndex].latitude!, zoneList[index].formattedCoordinates![subIndex].longitude!));
+      final coordinates = zoneList[index].formattedCoordinates ?? [];
+      if (coordinates.isEmpty) {
+        continue;
       }
+
       markerList.add(Marker(
         infoWindow: GetPlatform.isWeb || GetPlatform.isIOS ? InfoWindow(
-            title: zoneList[index].name
+            title: zoneList[index].name ?? ''
         ) : InfoWindow.noText,
         markerId: MarkerId('provider$index'),
         icon: GetPlatform.isWeb || GetPlatform.isIOS ? BitmapDescriptor.defaultMarker : await MarkerIcon.widgetToIcon(globalKeymap[index.toString()]!) ,
-        position: computeCentroid(coordinates : zoneList[index].formattedCoordinates!),
+        position: computeCentroid(coordinates : coordinates),
       ));
     }
     _markers = HashSet<Marker>.of(markerList);
@@ -93,20 +128,20 @@ class ServiceAreaController extends GetxController implements GetxService{
     double longitude = 0;
     int n = 1;
 
-    if(points !=null){
+    if(points !=null && points.isNotEmpty){
      n = points.length;
 
      for (LatLng point in points) {
        latitude += point.latitude;
-       longitude += point.latitude;
+       longitude += point.longitude;
      }
 
-    } else if(coordinates !=null ){
+    } else if(coordinates !=null && coordinates.isNotEmpty){
       n = coordinates.length;
 
       for (Coordinates point in coordinates) {
-        latitude += point.latitude!;
-        longitude += point.longitude!;
+        latitude += point.latitude ?? 0;
+        longitude += point.longitude ?? 0;
       }
 
     }else{
@@ -127,13 +162,21 @@ class ServiceAreaController extends GetxController implements GetxService{
 
   void mapBound(GoogleMapController controller) async {
     List<LatLng> latLongList = [];
-    for (int index = 0; index < _zoneList!.length; index++) {
-      if (_zoneList![index].formattedCoordinates != null) {
-        for (int subIndex = 0; subIndex < _zoneList![index].formattedCoordinates!.length; subIndex++) {
-          latLongList.add(LatLng(_zoneList![index].formattedCoordinates![subIndex].latitude!, _zoneList![index].formattedCoordinates![subIndex].longitude!));
+    for (int index = 0; index < (_zoneList?.length ?? 0); index++) {
+      final coordinates = _zoneList![index].formattedCoordinates ?? [];
+      for (final coordinate in coordinates) {
+        final lat = coordinate.latitude;
+        final lng = coordinate.longitude;
+        if (lat != null && lng != null) {
+          latLongList.add(LatLng(lat, lng));
         }
       }
     }
+
+    if (latLongList.isEmpty) {
+      return;
+    }
+
     await controller.getVisibleRegion();
     Future.delayed(const Duration(milliseconds: 100), () {
       controller.animateCamera(CameraUpdate.newLatLngBounds(

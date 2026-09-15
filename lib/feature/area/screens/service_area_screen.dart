@@ -18,92 +18,127 @@ class _ServiceAreaScreenState extends State<ServiceAreaScreen> {
   @override
   void initState() {
     super.initState();
-    Get.find<ServiceAreaController>().getZoneList(reload: false);
+    _loadZones();
+  }
+
+  Future<void> _loadZones() async {
+    try {
+      await HomeScreen.ensureZoneHeader();
+      await Get.find<ServiceAreaController>().getZoneList(reload: true);
+    } catch (_) {
+      try {
+        await Get.find<ServiceAreaController>().getZoneList(reload: true);
+      } catch (_) {}
+    }
   }
 
   void _handleInteractingWithMap(bool value) {
     setState(() {
       _isInteractingWithMap = value;
     });
-    if (kDebugMode) {
-      print("Is Moving $value");
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       endDrawer:ResponsiveHelper.isDesktop(context) ? const MenuDrawer():null,
       appBar: CustomAppBar(centerTitle: false, title: 'our_services_areas'.tr,showCart: false),
-
       body: GetBuilder<ServiceAreaController>(builder: (serviceAreaController){
-        return FooterBaseView(
-          physics: _isInteractingWithMap ? const NeverScrollableScrollPhysics() : const ClampingScrollPhysics(),
-          child: SizedBox( width: Dimensions.webMaxWidth,
-            child: Padding( padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-              child: Column( children: [
-
-                const AreaTopWidget(),
-
-                Row( crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Expanded(child: AreaViewWidget()),
-
-                  ResponsiveHelper.isDesktop(context) && serviceAreaController.zoneList != null  ?
-                  Expanded( child: Padding(
-                    padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeLarge,Dimensions.paddingSizeLarge,0,0),
-                    child: SizedBox(
-                      height: Get.height * 0.6,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
-                        child: AreaMapViewScreen(
-                          zoneList: serviceAreaController.zoneList ?? [],
-                          onValueChanged: _handleInteractingWithMap,
-                        ),
+        return RefreshIndicator(
+          onRefresh: _loadZones,
+          child: SingleChildScrollView(
+            physics: _isInteractingWithMap
+                ? const NeverScrollableScrollPhysics()
+                : const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+            child: FooterBaseView(
+              isScrollView: false,
+              child: SizedBox(
+                width: Dimensions.webMaxWidth,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                  child: Column(
+                    children: [
+                      const AreaTopWidget(),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Expanded(child: AreaViewWidget()),
+                          if (ResponsiveHelper.isDesktop(context) && serviceAreaController.zoneList != null)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  Dimensions.paddingSizeLarge,
+                                  Dimensions.paddingSizeLarge,
+                                  0,
+                                  0,
+                                ),
+                                child: SizedBox(
+                                  height: Get.height * 0.6,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
+                                    child: AreaMapViewScreen(
+                                      zoneList: serviceAreaController.zoneList ?? [],
+                                      onValueChanged: _handleInteractingWithMap,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else if (ResponsiveHelper.isDesktop(context) && serviceAreaController.zoneList == null)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  Dimensions.paddingSizeLarge,
+                                  Dimensions.paddingSizeLarge,
+                                  0,
+                                  0,
+                                ),
+                                child: SizedBox(
+                                  height: Get.height * 0.63,
+                                  width: Dimensions.webMaxWidth / 2,
+                                  child: Shimmer(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+                                        color: Theme.of(context).cardColor,
+                                        boxShadow: Get.isDarkMode
+                                            ? null
+                                            : [BoxShadow(color: Colors.grey[200]!, blurRadius: 5, spreadRadius: 1)],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  )) : ResponsiveHelper.isDesktop(context) && serviceAreaController.zoneList == null ?
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(Dimensions.paddingSizeLarge,Dimensions.paddingSizeLarge,0,0),
-                      child: SizedBox(
-                        height: Get.height * 0.63,
-                        width: Dimensions.webMaxWidth/2,
-                        child: Shimmer(child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                            color: Theme.of(context).cardColor,
-                            boxShadow: Get.isDarkMode?null:[BoxShadow(color: Colors.grey[200]!, blurRadius: 5, spreadRadius: 1)],
-                          ),
-                        )),
-                      ),
-                    ),
-                  ) :const SizedBox()
-                ]),
-
-                !ResponsiveHelper.isDesktop(context) ? const SizedBox(height: 100,): const SizedBox()
-              ]),
+                      if (!ResponsiveHelper.isDesktop(context))
+                        const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );
       }),
-
-
-      bottomSheet: !ResponsiveHelper.isDesktop(context) ? SizedBox( height: 80,
-        child: Center(
-          child: Padding( padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-            child: CustomButton(
-              radius: Dimensions.radiusLarge,
-              buttonText: 'view_on_map'.tr,
-              onPressed: () {
-                Get.toNamed(RouteHelper.getServiceAreaMap());
-              },
-            ),
-          ),
-        ),
-      ) : null,
-
-
+      bottomSheet: !ResponsiveHelper.isDesktop(context)
+          ? SizedBox(
+              height: 80,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+                  child: CustomButton(
+                    radius: Dimensions.radiusLarge,
+                    buttonText: 'view_on_map'.tr,
+                    onPressed: () {
+                      Get.toNamed(RouteHelper.getServiceAreaMap());
+                    },
+                  ),
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

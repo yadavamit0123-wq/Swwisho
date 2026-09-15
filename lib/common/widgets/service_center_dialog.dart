@@ -21,12 +21,42 @@ class ServiceCenterDialog extends StatefulWidget {
 }
 
 class _ProductBottomSheetState extends State<ServiceCenterDialog> {
+  bool _preparing = true;
+  Service? _resolvedService;
+
   @override
   void initState() {
-    Get.find<CartController>().setInitialCartList(widget.service!);
-    Get.find<CartController>().updatePreselectedProvider(null, shouldUpdate: false);
-    Get.find<AllSearchController>().searchFocus.unfocus();
     super.initState();
+    _prepareCartDialog();
+  }
+
+  Future<void> _prepareCartDialog() async {
+    try {
+      await HomeScreen.ensureZoneHeader();
+
+      Service? service = widget.service;
+      final serviceId = widget.service?.id;
+      if (serviceId != null && serviceId.isNotEmpty) {
+        try {
+          final detailsController = Get.find<ServiceDetailsController>();
+          await detailsController.getServiceDetails(serviceId);
+          service = detailsController.service ?? service;
+        } catch (_) {}
+      }
+
+      _resolvedService = service;
+      if (service != null) {
+        Get.find<CartController>().setInitialCartList(service);
+      }
+      Get.find<CartController>().updatePreselectedProvider(null, shouldUpdate: false);
+      try {
+        Get.find<AllSearchController>().searchFocus.unfocus();
+      } catch (_) {}
+    } finally {
+      if (mounted) {
+        setState(() => _preparing = false);
+      }
+    }
   }
 
   @override
@@ -43,6 +73,24 @@ class _ProductBottomSheetState extends State<ServiceCenterDialog> {
   }
 
   pointerInterceptor(){
+    if (_preparing) {
+      return Padding(
+        padding: EdgeInsets.only(top: ResponsiveHelper.isWeb() ? 0 : Dimensions.cartDialogPadding),
+        child: Container(
+          width: ResponsiveHelper.isDesktop(context) ? Dimensions.webMaxWidth / 2 : Dimensions.webMaxWidth,
+          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
+          ),
+          child: SizedBox(
+            height: 220,
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.only(top: ResponsiveHelper.isWeb()? 0 :Dimensions.cartDialogPadding),
       child: PointerInterceptor(
@@ -55,8 +103,12 @@ class _ProductBottomSheetState extends State<ServiceCenterDialog> {
           ),
           child:  GetBuilder<CartController>(builder: (cartControllerInit) {
               return GetBuilder<ServiceController>(builder: (serviceController) {
-                if(widget.service!.variationsAppFormat!.zoneWiseVariations != null) {
-                  return Column(mainAxisSize: MainAxisSize.min,
+                final service = _resolvedService ?? widget.service;
+                final hasVariations = cartControllerInit.initialCartList.isNotEmpty;
+
+                if(service != null && hasVariations) {
+                  return SingleChildScrollView(
+                    child: Column(mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -66,7 +118,7 @@ class _ProductBottomSheetState extends State<ServiceCenterDialog> {
                           ClipRRect(
                               borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeDefault)),
                               child: CustomImage(
-                                image: '${widget.service!.thumbnailFullPath}',
+                                image: service.thumbnailFullPath ?? '',
                                 height: Dimensions.imageSizeButton,
                                 width: Dimensions.imageSizeButton,
                               ),
@@ -92,19 +144,19 @@ class _ProductBottomSheetState extends State<ServiceCenterDialog> {
                       ),
                       const SizedBox(height: Dimensions.paddingSizeEight,),
                       Text(
-                        widget.service!.name!,
+                        service.name ?? '',
                         style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
                         textAlign: TextAlign.center,
                         maxLines: 2,
                       ),
                       const SizedBox(height: Dimensions.paddingSizeMini,),
                       Text(
-                        widget.service!.variationsAppFormat!.zoneWiseVariations!.length > 1 ?
-
-                        "${widget.service!.variationsAppFormat!.zoneWiseVariations!.length} ${'variations_available'.tr}" :
-                        "${widget.service!.variationsAppFormat!.zoneWiseVariations!.length} ${'variation_available'.tr}",
-
-                        style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .5)),
+                        cartControllerInit.initialCartList.length > 1 ?
+                        "${cartControllerInit.initialCartList.length} ${'variations_available'.tr}" :
+                        "${cartControllerInit.initialCartList.length} ${'variation_available'.tr}",
+                        style: robotoRegular.copyWith(
+                          color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .5),
+                        ),
                       ),
                       Column(
                           mainAxisAlignment: MainAxisAlignment.start,
@@ -271,13 +323,14 @@ class _ProductBottomSheetState extends State<ServiceCenterDialog> {
                                 }
                               }
                             }: null,
-                            buttonText:(cartController.cartList.isNotEmpty && cartController.cartList.elementAt(0).serviceId == widget.service!.id)
+                            buttonText:(cartController.cartList.isNotEmpty && cartController.cartList.elementAt(0).serviceId == service.id)
                                 ? 'update_cart'.tr : 'add_to_cart'.tr,
                             ),
                           )
                         ]);
                       }),
                     ],
+                  ),
                   );
                 }
                 return Stack(

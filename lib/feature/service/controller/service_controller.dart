@@ -545,20 +545,62 @@ class ServiceController extends GetxController implements GetxService {
     update();
   }
 
+  List<Service> _parseOfferServices(dynamic body) {
+    final services = <Service>[];
+    if (body is! Map) {
+      return services;
+    }
+
+    dynamic content = body['content'];
+    dynamic data;
+    if (content is Map) {
+      data = content['data'];
+    } else if (content is List) {
+      data = content;
+    } else {
+      data = body['data'];
+    }
+
+    if (data is List) {
+      for (final item in data) {
+        try {
+          if (item is Map) {
+            services.add(Service.fromJson(Map<String, dynamic>.from(item)));
+          }
+        } catch (_) {}
+      }
+    }
+    return services;
+  }
+
   Future<void> getOffersList(int offset, bool reload) async {
+    if (reload || offset == 1) {
+      _offerBasedServiceList = null;
+      if (offset == 1) {
+        _offerBasedServiceContent = null;
+      }
+      update();
+    }
+
     try {
       Response response = await serviceRepo.getOffersList(offset);
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.body is Map) {
+        final body = Map<String, dynamic>.from(response.body);
         try {
-          if (response.body is Map) {
-            _offerBasedServiceContent =
-                ServiceModel.fromJson(Map<String, dynamic>.from(response.body)).content;
-          }
+          _offerBasedServiceContent = ServiceModel.fromJson(body).content;
         } catch (_) {
           _offerBasedServiceContent = null;
         }
 
-        final fetched = _offerBasedServiceContent?.serviceList ?? [];
+        final fetched = _offerBasedServiceContent?.serviceList ?? _parseOfferServices(body);
+        if (_offerBasedServiceContent == null && fetched.isNotEmpty) {
+          _offerBasedServiceContent = ServiceContent(
+            serviceList: fetched,
+            total: fetched.length,
+            currentPage: offset,
+          );
+        }
+
         if (reload || offset == 1 || _offerBasedServiceList == null) {
           _offerBasedServiceList = [];
         }

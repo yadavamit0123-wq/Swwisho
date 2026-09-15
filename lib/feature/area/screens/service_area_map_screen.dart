@@ -12,21 +12,46 @@ class ServiceAreaMapScreen extends StatefulWidget {
 class _ServiceAreaMapScreenState extends State<ServiceAreaMapScreen> {
   @override
   void initState() {
-    Get.find<ServiceAreaController>().getZoneList(reload: false);
     super.initState();
+    _loadZones();
   }
+
+  Future<void> _loadZones() async {
+    try {
+      await HomeScreen.ensureZoneHeader();
+      await Get.find<ServiceAreaController>().getZoneList(reload: false);
+    } catch (_) {
+      try {
+        await Get.find<ServiceAreaController>().getZoneList(reload: false);
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       endDrawer:ResponsiveHelper.isDesktop(context) ? const MenuDrawer():null,
       appBar: CustomAppBar(centerTitle: false, title: 'our_services_areas'.tr, showCart: false),
       body: GetBuilder<ServiceAreaController>(builder: (serviceAreaController){
-        return  serviceAreaController.zoneList != null ? Column(
-          children: [
-            Expanded(child: AreaMapViewScreen(zoneList: serviceAreaController.zoneList?? [])),
-          ],
-        ): Center(child: WebShadowWrap(child: SizedBox(height : Get.height * 0.9)));
+        if (serviceAreaController.zoneList == null) {
+          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+        }
 
+        final zones = serviceAreaController.zoneList ?? [];
+        if (zones.isEmpty) {
+          return Center(
+            child: NoDataScreen(
+              text: 'no_data_found'.tr,
+              type: NoDataType.others,
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            Expanded(child: AreaMapViewScreen(zoneList: zones)),
+          ],
+        );
       }),
     );
   }

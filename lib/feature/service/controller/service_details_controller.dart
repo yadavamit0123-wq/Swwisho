@@ -22,15 +22,19 @@ class ServiceDetailsController extends GetxController implements GetxService{
   ///call service details data based on service id
   Future<void> getServiceDetails(String serviceID,{String fromPage=""}) async {
     _service = null;
-    Response response = await serviceDetailsRepo.getServiceDetails(serviceID,fromPage);
-    if (response.body['response_code'] == 'default_200' ) {
-      _service = Service.fromJson(response.body['content']);
-    } else {
-      _service = Service();
-      if(response.statusCode != 200){
-        ApiChecker.checkApi(response);
+    try {
+      Response response = await serviceDetailsRepo.getServiceDetails(serviceID,fromPage);
+      if (response.statusCode == 200 && response.body is Map && response.body['response_code'] == 'default_200') {
+        final content = response.body['content'];
+        if (content is Map) {
+          _service = Service.fromJson(Map<String, dynamic>.from(content));
+        }
+      } else {
+        if(response.statusCode != 200){
+          ApiChecker.checkApi(response);
+        }
       }
-    }
+    } catch (_) {}
     _isLoading = false;
 
     update();

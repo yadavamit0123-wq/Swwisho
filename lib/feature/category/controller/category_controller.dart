@@ -30,6 +30,18 @@ class CategoryController extends GetxController implements GetxService {
   String? get searchText => _searchText;
 
 
+  /// Keeps the category strip in sync when home already fetched categories
+  /// into its own local state before [CategoryController] has data.
+  void seedCategoryList(List<CategoryModel> categories) {
+    if (categories.isEmpty) {
+      return;
+    }
+    if (_categoryList == null || _categoryList!.isEmpty) {
+      _categoryList = List<CategoryModel>.from(categories);
+      update();
+    }
+  }
+
   Future<void> getCategoryList(bool reload ) async {
 
     if(_categoryList == null || reload){

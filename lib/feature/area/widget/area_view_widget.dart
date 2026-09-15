@@ -6,12 +6,25 @@ class AreaViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? zoneId = Get.find<LocationController>().getUserAddress()?.zoneId!;
+    final zoneId = Get.find<LocationController>().getUserAddress()?.zoneId;
     return GetBuilder<ServiceAreaController>(
         builder: (serviceAreaController) {
-          return serviceAreaController.zoneList == null  ? const AvailableAreaShimmer() :
+          if (serviceAreaController.zoneList == null) {
+            return const AvailableAreaShimmer();
+          }
 
-          GridView.builder(
+          final zones = serviceAreaController.zoneList ?? [];
+          if (zones.isEmpty) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.35,
+              child: NoDataScreen(
+                text: 'no_data_found'.tr,
+                type: NoDataType.others,
+              ),
+            );
+          }
+
+          return GridView.builder(
             key: UniqueKey(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               childAspectRatio: 1.7,
@@ -21,13 +34,15 @@ class AreaViewWidget extends StatelessWidget {
             ),
             physics:const NeverScrollableScrollPhysics(),
             shrinkWrap: true,
-            itemCount: serviceAreaController.zoneList?.length,
+            itemCount: zones.length,
             itemBuilder: (context, index) {
+              final zone = zones[index];
+              final isSelected = zoneId != null && zoneId == zone.id;
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeExtraSmall, vertical: 0),
                 child: Column(
                   children: [
-                    zoneId == serviceAreaController.zoneList![index].id ? Column( mainAxisSize: MainAxisSize.min, children: [
+                    isSelected ? Column( mainAxisSize: MainAxisSize.min, children: [
                       Text('your_area'.tr, style:  robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall, color: Theme.of(context).colorScheme.primary)),
                       const SizedBox(height: 3),
                     ]) : const SizedBox(height: Dimensions.paddingSizeDefault),
@@ -35,17 +50,17 @@ class AreaViewWidget extends StatelessWidget {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                          Get.toNamed(RouteHelper.getPickMapRoute("", true, 'false', serviceAreaController.zoneList![index], Get.find<LocationController>().getUserAddress()));
+                          Get.toNamed(RouteHelper.getPickMapRoute("", true, 'false', zone, Get.find<LocationController>().getUserAddress()));
                         },
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-                            border: Border.all(color: zoneId == serviceAreaController.zoneList![index].id  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.45) : Theme.of(context).colorScheme.primary.withValues(alpha: 0.10)),
-                            color: zoneId == serviceAreaController.zoneList![index].id  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
+                            border: Border.all(color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.45) : Theme.of(context).colorScheme.primary.withValues(alpha: 0.10)),
+                            color: isSelected ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.15) : Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeEight),
                           child: Center(
-                            child: Text(serviceAreaController.zoneList![index].name!, style: robotoRegular, maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,),
+                            child: Text(zone.name ?? '', style: robotoRegular, maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center,),
                           ),
                         ),
                       ),

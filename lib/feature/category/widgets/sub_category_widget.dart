@@ -50,7 +50,7 @@ class SubCategoryWidget extends GetView<ServiceController> {
                 Text( categoryModel?.description ?? '', maxLines: 2, overflow: TextOverflow.ellipsis,
                   style: robotoRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
-                    color: Theme.of(context).textTheme.bodyLarge!.color,
+                    color: Theme.of(context).textTheme.bodyLarge?.color ?? Theme.of(context).hintColor,
                   ),
                 ),
                 const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
