@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:convert' hide Codec;
 import 'dart:ui';
 
 import 'package:demandium/api/local/cache_response.dart';
