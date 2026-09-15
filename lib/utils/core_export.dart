@@ -36,6 +36,7 @@ export 'package:demandium/feature/service/view/service_details_screen.dart';
 export 'package:demandium/feature/splash/view/splash_screen.dart';
 export 'package:demandium/feature/support/support_screen.dart';
 export '../feature/search/view/search_result_screen.dart';
+export '../feature/search/view/search_landing_screen.dart';
 export 'package:demandium/common/widgets/custom_snackbar.dart';
 export 'package:demandium/api/remote/client_api.dart';
 export 'package:demandium/feature/auth/model/signup_body.dart';

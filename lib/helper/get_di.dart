@@ -55,6 +55,7 @@ import 'package:demandium/feature/home/controller/advertisement_controller.dart'
 import 'package:demandium/feature/category/controller/category_controller.dart';
 import 'package:demandium/feature/service/controller/service_controller.dart';
 import 'package:demandium/feature/service/controller/service_details_controller.dart';
+import 'package:demandium/feature/service/controller/service_details_tab_controller.dart';
 import 'package:demandium/feature/search/controller/search_controller.dart';
 import 'package:demandium/feature/coupon/controller/coupon_controller.dart';
 import 'package:demandium/feature/create_post/controller/create_post_controller.dart';
@@ -134,6 +135,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => CategoryController(categoryRepo: Get.find()), fenix: true);
   Get.lazyPut(() => ServiceController(serviceRepo: Get.find()), fenix: true);
   Get.lazyPut(() => ServiceDetailsController(serviceDetailsRepo: Get.find()), fenix: true);
+  Get.lazyPut(() => ServiceTabController(serviceDetailsRepo: Get.find()), fenix: true);
   Get.lazyPut(() => AllSearchController(searchRepo: Get.find()), fenix: true);
   Get.lazyPut(() => CouponController(couponRepo: Get.find()), fenix: true);
   Get.lazyPut(() => CreatePostController(createPostRepo: Get.find()), fenix: true);

@@ -34,11 +34,11 @@ class _RecommendedSearchState extends State<RecommendedSearch> {
               onTap: ()=> serviceController.recommendedSearchList == null? null : serviceController.getRecommendedSearchList(reload: true),
               child: Row(children: [
                 Text('shuffle'.tr,style: robotoMedium.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .5),
+                  color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: .5) ?? Theme.of(context).hintColor,
 
                 ),),
                 const SizedBox(width: Dimensions.paddingSizeExtraSmall,),
-                Icon(Icons.cached,size: 16, color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .5),)
+                Icon(Icons.cached,size: 16, color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: .5) ?? Theme.of(context).hintColor,)
               ],),
             )
           ]),
@@ -64,12 +64,12 @@ class _RecommendedSearchState extends State<RecommendedSearch> {
                         onTap: (){
                           Get.back();
                           FocusScope.of(context).unfocus();
-                          Get.toNamed(RouteHelper.getSearchResultRoute(queryText: serviceController.recommendedSearchList?[index].name??''));
+                          RouteHelper.toSearchResult(queryText: serviceController.recommendedSearchList?[index].name??'');
                           Get.find<AllSearchController>().populatedSearchController(serviceController.recommendedSearchList?[index].name??'');
                          },
                         child: Text(
                           serviceController.recommendedSearchList?[index].name??"",
-                          style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .8)),
+                          style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: .8) ?? Theme.of(context).hintColor),
                         ),
                       ),
                     ),

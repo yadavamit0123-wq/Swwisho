@@ -510,7 +510,7 @@ class _HomeServiceGrid extends StatelessWidget {
                   if (id == null || id.isEmpty) {
                     return;
                   }
-                  Get.toNamed(RouteHelper.getServiceRoute(id));
+                  RouteHelper.toServiceDetails(id);
                 },
                 child: Container(
                   decoration: BoxDecoration(

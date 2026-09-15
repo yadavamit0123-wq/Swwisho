@@ -16,13 +16,29 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
 
   @override
   void initState() {
-    if(widget.serviceID != null){
-      Get.find<ServiceDetailsController>().getServiceDetails(widget.serviceID!, fromPage: widget.fromPage == "search_page" ? "search_page" : "");
-      if(Get.find<AuthController>().isLoggedIn()){
-        Get.find<ServiceController>().getRecentlyViewedServiceList(1,true,);
+    super.initState();
+    _loadDetails();
+  }
+
+  Future<void> _loadDetails() async {
+    try {
+      await HomeScreen.ensureZoneHeader();
+    } catch (_) {}
+    try {
+      if (!Get.isRegistered<ServiceTabController>()) {
+        Get.put(ServiceTabController(serviceDetailsRepo: Get.find()));
+      }
+    } catch (_) {}
+    final serviceId = widget.serviceID;
+    if (serviceId != null && serviceId.isNotEmpty) {
+      Get.find<ServiceDetailsController>().getServiceDetails(
+        serviceId,
+        fromPage: widget.fromPage == "search_page" ? "search_page" : "",
+      );
+      if (Get.find<AuthController>().isLoggedIn()) {
+        Get.find<ServiceController>().getRecentlyViewedServiceList(1, true);
       }
     }
-    super.initState();
   }
 
   @override
@@ -107,7 +123,6 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                         ),
                         //Tab Bar
                         GetBuilder<ServiceTabController>(
-                          init: Get.find<ServiceTabController>(),
                           builder: (serviceTabController) {
                             return Container(
                               color:Theme.of(context).scaffoldBackgroundColor,
@@ -128,7 +143,6 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                                     tabBar: TabBar(
                                         padding: const EdgeInsets.only(top: Dimensions.paddingSizeMini),
                                         unselectedLabelColor: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.4),
-                                        controller: serviceTabController.controller!,
                                         labelColor:Get.isDarkMode? Colors.white : Theme.of(context).primaryColor,
                                         labelStyle: robotoBold.copyWith(
                                           fontSize: Dimensions.fontSizeSmall,
@@ -163,21 +177,19 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
                         //Tab Bar View
                         GetBuilder<ServiceTabController>(
                           initState: (state){
-                            Get.find<ServiceTabController>().getServiceReview(service.id ?? '', 1);
+                            try {
+                              Get.find<ServiceTabController>().getServiceReview(service.id ?? '', 1);
+                            } catch (_) {}
                           },
                           builder: (controller){
                             Widget tabBarView = TabBarView(
-                              controller: controller.controller,
                               children: [
                                 SingleChildScrollView(child: ServiceOverview(description: service.description ?? '')),
                                 if(service.faqs?.isNotEmpty ?? false)
                                   const SingleChildScrollView(child: ServiceDetailsFaqSection()),
-                                if(controller.reviewList != null)
-                                  SingleChildScrollView(
-                                    child: ServiceDetailsReview(serviceID: service.id ?? '',),
-                                  )
-                                else
-                                  const EmptyReviewWidget()
+                                SingleChildScrollView(
+                                  child: ServiceDetailsReview(serviceID: service.id ?? '',),
+                                ),
                               ],
                             );
 

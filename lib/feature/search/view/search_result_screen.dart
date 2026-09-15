@@ -29,7 +29,7 @@ class _SearchResultScreenState extends State<SearchResultScreen> {
 
     Get.find<AllSearchController>().clearAllFilterValue(shouldUpdate: false);
     Get.find<AllSearchController>().updateSortByType(widget.fromPage, shouldUpdate: false);
-    Get.find<AllSearchController>().searchData(query:widget.queryText!, offset: 1, shouldUpdate: false);
+    Get.find<AllSearchController>().searchData(query:widget.queryText ?? '', offset: 1, shouldUpdate: false);
     await Get.find<CategoryController>().getCategoryList(false);
     Get.find<AllSearchController>().resetCategoryCheckedList(shouldUpdate: false);
     Get.find<AllSearchController>().populatedSearchController(widget.queryText ?? "", shouldUpdate: false);

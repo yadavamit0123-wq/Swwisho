@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:demandium/api/local/cache_response.dart';
@@ -21,25 +22,51 @@ class ServiceAreaController extends GetxController implements GetxService{
   Set<Polygon> get polygone => _polygone;
 
 
+  List<Map<String, dynamic>> _extractMaps(dynamic data, {int depth = 0}) {
+    if (depth > 6) {
+      return [];
+    }
+    if (data is String && data.trim().isNotEmpty) {
+      try {
+        return _extractMaps(jsonDecode(data), depth: depth + 1);
+      } catch (_) {
+        return [];
+      }
+    }
+    if (data is List) {
+      final maps = <Map<String, dynamic>>[];
+      for (final item in data) {
+        if (item is Map) {
+          maps.add(Map<String, dynamic>.from(item));
+        } else {
+          maps.addAll(_extractMaps(item, depth: depth + 1));
+        }
+      }
+      return maps;
+    }
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      for (final key in ['content', 'data', 'zones', 'zone_list', 'result', 'items']) {
+        if (map[key] != null) {
+          final nested = _extractMaps(map[key], depth: depth + 1);
+          if (nested.isNotEmpty) {
+            return nested;
+          }
+        }
+      }
+      if (map['id'] != null || map['name'] != null || map['zone_name'] != null) {
+        return [map];
+      }
+    }
+    return [];
+  }
+
   List<ZoneModel> _parseZoneList(dynamic data) {
     final zones = <ZoneModel>[];
-    if (data is! Map) {
-      return zones;
-    }
-
-    final content = data['content'];
-    final list = content is Map
-        ? content['data']
-        : (content is List ? content : data['data']);
-
-    if (list is List) {
-      for (final zone in list) {
-        try {
-          if (zone is Map) {
-            zones.add(ZoneModel.fromJson(Map<String, dynamic>.from(zone)));
-          }
-        } catch (_) {}
-      }
+    for (final item in _extractMaps(data)) {
+      try {
+        zones.add(ZoneModel.fromJson(item));
+      } catch (_) {}
     }
     return zones;
   }
@@ -88,16 +115,38 @@ class ServiceAreaController extends GetxController implements GetxService{
         fetchFromLocal: ()=> serviceAreaRepo.getZoneList<CacheResponseData>(source: DataSourceEnum.local),
         fetchFromClient: ()=> serviceAreaRepo.getZoneList(source: DataSourceEnum.client),
         onResponse: (data, source) {
-          _zoneList = _parseZoneList(data);
-          _polygone = _buildPolygons(_zoneList ?? []);
-          update();
+          final parsed = _parseZoneList(data);
+          if (parsed.isNotEmpty || source == DataSourceEnum.client) {
+            _zoneList = parsed;
+            _polygone = _buildPolygons(_zoneList ?? []);
+            update();
+          }
         },
       );
     } catch (_) {
-    } finally {
-      _zoneList ??= [];
-      update();
     }
+
+    if (_zoneList == null || _zoneList!.isEmpty) {
+      try {
+        Response response = await serviceAreaRepo.apiClient.postData(AppConstants.getZoneListApi, {});
+        var parsed = _parseZoneList(response.body);
+        if (parsed.isEmpty) {
+          parsed = _parseZoneList(response.bodyString);
+        }
+        if (parsed.isEmpty) {
+          response = await serviceAreaRepo.apiClient.getData(AppConstants.getZoneListApi);
+          parsed = _parseZoneList(response.body);
+          if (parsed.isEmpty) {
+            parsed = _parseZoneList(response.bodyString);
+          }
+        }
+        _zoneList = parsed;
+        _polygone = _buildPolygons(_zoneList ?? []);
+      } catch (_) {}
+    }
+
+    _zoneList ??= [];
+    update();
   }
 
   Future<void> setMarker(List<ZoneModel> zoneList, Map<String, GlobalKey> globalKeymap) async {

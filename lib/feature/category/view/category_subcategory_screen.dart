@@ -411,7 +411,7 @@ class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> 
                           if (id == null || id.isEmpty) {
                             return;
                           }
-                          Get.toNamed(RouteHelper.getServiceRoute(id));
+                          RouteHelper.toServiceDetails(id);
                         },
                         child: Container(
                           padding: const EdgeInsets.all(12),

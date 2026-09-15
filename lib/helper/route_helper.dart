@@ -145,7 +145,19 @@ class RouteHelper {
     return '$searchScreen?fromPage=${fromPage??''}&query=$data';
   }
 
+  static Future<void> toSearchResult({String? queryText, String? fromPage}) {
+    return Get.to(() => SearchResultScreen(queryText: queryText ?? '', fromPage: fromPage)) ?? Future.value();
+  }
+
   static String getServiceRoute(String id, {String fromPage="others"}) => '$serviceDetails?id=$id&fromPage=$fromPage';
+
+  static Future<void> toServiceDetails(String id, {String fromPage = "others"}) {
+    return Get.to(() => ServiceDetailsScreen(serviceID: id, fromPage: fromPage)) ?? Future.value();
+  }
+
+  static Future<void> toSuggestService() {
+    return Get.to(() => const SuggestServiceScreen()) ?? Future.value();
+  }
   static String getProfileRoute() => profile;
   static String getBlogRoute() => blog;
   static String getEditProfileRoute() => profileEdit;
@@ -391,16 +403,23 @@ class RouteHelper {
              print("Error : $e");
            }
          }
-          return getRoute(SearchResultScreen(
+          return SearchResultScreen(
             queryText: queryText,
             fromPage: Get.parameters['fromPage'],
-          ));
+          );
         }),
 
     GetPage(
       name: serviceDetails, binding: ServiceDetailsBinding(),
       page: () {
-        return getRoute(Get.arguments ?? ServiceDetailsScreen(serviceID: Get.parameters['id'],fromPage: Get.parameters['fromPage'],));},
+        if (Get.arguments is ServiceDetailsScreen) {
+          return Get.arguments as ServiceDetailsScreen;
+        }
+        return ServiceDetailsScreen(
+          serviceID: Get.parameters['id'],
+          fromPage: Get.parameters['fromPage'],
+        );
+      },
     ),
 
     GetPage(name: profile, page: () => const ProfileScreen()),
@@ -532,8 +551,8 @@ class RouteHelper {
       appbarTitle: Get.parameters['appbarTitle']!,
     )
     ),
-    GetPage(binding: SuggestServiceBinding(),name:suggestService, page:() => getRoute(const SuggestServiceScreen(),)),
-    GetPage(binding: SuggestServiceBinding(),name:suggestServiceList, page:() => getRoute(const SuggestedServiceListScreen(),)),
+    GetPage(binding: SuggestServiceBinding(),name:suggestService, page:() => const SuggestServiceScreen()),
+    GetPage(binding: SuggestServiceBinding(),name:suggestServiceList, page:() => const SuggestedServiceListScreen()),
     GetPage(binding: WalletBinding(), name: myWallet, page:() =>
         WalletScreen(status: Get.parameters['flag'], token: Get.parameters['token'], fromNotification: Get.parameters['fromNotification'],)),
     GetPage(binding: LoyaltyPointBinding(),name:loyaltyPoint, page:() => LoyaltyPointScreen(

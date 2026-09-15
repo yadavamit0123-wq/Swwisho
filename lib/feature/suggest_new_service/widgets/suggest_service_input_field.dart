@@ -37,8 +37,8 @@ class _SuggestServiceInputFieldState extends State<SuggestServiceInputField> {
                     "select_category".tr:suggestedServiceController.selectedCategoryName,
                       style: robotoRegular.copyWith(
                           color: suggestedServiceController.selectedCategoryName==''?
-                          Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.6):
-                          Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.8)
+                          (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.6):
+                          (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.8)
                       ),
                     ),
                   ),
@@ -52,7 +52,7 @@ class _SuggestServiceInputFieldState extends State<SuggestServiceInputField> {
                         children: [
                           Text(items.name ?? "",
                             style: robotoRegular.copyWith(
-                              color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.8),
+                              color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.8),
                             ),
                           ),
                         ],

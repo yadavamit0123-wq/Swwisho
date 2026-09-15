@@ -185,7 +185,7 @@ class _OfferScreenState extends State<OfferScreen> {
                               if (id == null || id.isEmpty) {
                                 return;
                               }
-                              Get.toNamed(RouteHelper.getServiceRoute(id));
+                              RouteHelper.toServiceDetails(id);
                             },
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,

@@ -142,10 +142,11 @@ class ServiceWidgetHorizontal extends StatelessWidget {
                 ]),
               ),
               Positioned.fill(child: RippleButton(onTap: () {
-                Get.toNamed(
-                  RouteHelper.getServiceRoute(serviceController.recommendedServiceList![index].id!),
-                  arguments: ServiceDetailsScreen(serviceID: serviceController.recommendedServiceList![index].id!),
-                );
+                final id = serviceController.recommendedServiceList?[index].id;
+                if (id == null || id.isEmpty) {
+                  return;
+                }
+                RouteHelper.toServiceDetails(id);
               })),
 
               if(showIsFavoriteButton)Align(

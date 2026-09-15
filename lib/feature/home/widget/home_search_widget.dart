@@ -1,4 +1,5 @@
 import 'package:demandium/utils/core_export.dart';
+import 'package:demandium/feature/search/view/search_landing_screen.dart';
 import 'package:get/get.dart';
 
 class HomeSearchBar extends StatelessWidget {
@@ -13,9 +14,7 @@ class HomeSearchBar extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        try {
-          Get.dialog(const SearchSuggestionDialog(), transitionCurve: Curves.easeIn);
-        } catch (_) {}
+        Get.to(() => const SearchLandingScreen());
       },
       child: Container(
         height: 52,

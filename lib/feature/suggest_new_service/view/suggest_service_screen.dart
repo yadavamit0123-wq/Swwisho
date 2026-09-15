@@ -13,8 +13,15 @@ class _SuggestServiceScreenState extends State<SuggestServiceScreen> {
   @override
   void initState() {
     super.initState();
-    Get.find<CategoryController>().getCategoryList(false);
+    try {
+      Get.find<CategoryController>().getCategoryList(false);
+    } catch (_) {}
   }
+
+  Color _textColor(BuildContext context, double alpha) {
+    return (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: alpha);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,12 +33,13 @@ class _SuggestServiceScreenState extends State<SuggestServiceScreen> {
         icon: const Icon(Icons.list),
       )),
       body: GetBuilder<SuggestServiceController>(builder: (suggestServiceController){
-        return FooterBaseView(
+        return SafeArea(
           child: Center(
             child: SizedBox(
               width: Dimensions.webMaxWidth,
               child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                child: SizedBox(height: Get.height,
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 24,
                   child: Stack(alignment: Alignment.bottomCenter,
                     children: [
                       if(ResponsiveHelper.isDesktop(context))
@@ -58,7 +66,7 @@ class _SuggestServiceScreenState extends State<SuggestServiceScreen> {
                           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                           child: Text('tell_us_more_about_your_service'.tr,
                               style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault,
-                                color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.9),
+                                color: _textColor(context, 0.9),
                               )
                           ),
                         ),
@@ -67,7 +75,7 @@ class _SuggestServiceScreenState extends State<SuggestServiceScreen> {
                           padding: const EdgeInsets.symmetric(horizontal:Dimensions.paddingSizeSmall),
                           child: Text('suggest_more_service_that_you_willing'.tr,
                             style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeSmall,
-                              color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.7),
+                              color: _textColor(context, 0.7),
                             ), textAlign: TextAlign.center,
                           ),
                         ),
@@ -76,7 +84,15 @@ class _SuggestServiceScreenState extends State<SuggestServiceScreen> {
                           duration: const Duration(milliseconds: 500),
                           child: Padding(
                             padding: const EdgeInsets.all(Dimensions.paddingSizeExtraLarge,),
-                            child: Image.asset(Images.suggestServiceIcon,width: suggestServiceController.initialImageSize,),
+                            child: Image.asset(
+                              Images.suggestServiceIcon,
+                              width: suggestServiceController.initialImageSize,
+                              errorBuilder: (_, __, ___) => Icon(
+                                Icons.miscellaneous_services_outlined,
+                                size: suggestServiceController.initialImageSize,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
                           ),
                         ),
 

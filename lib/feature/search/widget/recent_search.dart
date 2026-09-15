@@ -22,7 +22,7 @@ class RecentSearch extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
               child: Text('clear_all'.tr, style: robotoMedium.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .5),
+              color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: .5) ?? Theme.of(context).hintColor,
                 fontSize: Dimensions.fontSizeSmall,
               )),
             ),
@@ -48,7 +48,7 @@ class RecentSearch extends StatelessWidget {
                     Get.back();
                     FocusScope.of(context).unfocus();
                     searchController.populatedSearchController(searchController.historyList![index]);
-                    Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.historyList![index]));
+                    RouteHelper.toSearchResult(queryText: searchController.historyList![index]);
                   },
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: Get.width * 0.85,),
@@ -56,7 +56,7 @@ class RecentSearch extends StatelessWidget {
                       const SizedBox(width: Dimensions.paddingSizeExtraSmall,),
                       Flexible(
                         child: Text(searchController.historyList![index],
-                          style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .7)),
+                          style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: .7) ?? Theme.of(context).hintColor),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

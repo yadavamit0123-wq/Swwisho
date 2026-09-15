@@ -52,7 +52,7 @@ class NoDataScreen extends StatelessWidget {
           type == NoDataType.notification ? 'empty_notifications'.tr : text!.tr,
           style: robotoMedium.copyWith(
             fontSize: Dimensions.fontSizeDefault,
-            color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .4),),
+            color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .4),),
           textAlign: TextAlign.center,
         ),
       ),
@@ -62,7 +62,7 @@ class NoDataScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeDefault),
         child: Text('there_are_no_services_related_to_your_search'.tr,style: robotoRegular.copyWith(
           fontSize: Dimensions.fontSizeDefault,
-          color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .4),
+          color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .4),
         ),
           textAlign: TextAlign.center,),
       ),

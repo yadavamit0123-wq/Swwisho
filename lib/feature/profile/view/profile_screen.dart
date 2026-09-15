@@ -130,6 +130,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   useSafeArea: false
                               );
                             }
+                            else if(profileCartModelList[index].routeName == RouteHelper.getNewSuggestedServiceScreen()){
+                              RouteHelper.toSuggestService();
+                            }
                             else{
                               Get.toNamed(profileCartModelList[index].routeName);
                             }

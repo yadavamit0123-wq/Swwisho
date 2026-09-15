@@ -13,7 +13,7 @@ class ZoneModel {
 
   ZoneModel.fromJson(Map<String, dynamic> json) {
     id = json['id']?.toString();
-    name = json['name']?.toString();
+    name = (json['name'] ?? json['zone_name'] ?? json['display_name'])?.toString();
     if (json['formatted_coordinates'] is List) {
       formattedCoordinates = <Coordinates>[];
       for (final v in json['formatted_coordinates']) {

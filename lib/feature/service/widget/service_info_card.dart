@@ -40,8 +40,8 @@ class ServiceInformationCard extends StatelessWidget {
                         ),
                         DiscountTag(fromTop: 0,
                             color: Theme.of(context).colorScheme.error,
-                            discount: discount!.discountAmount!,
-                            discountType: discount!.discountAmountType)
+                            discount: discount?.discountAmount ?? 0,
+                            discountType: discount?.discountAmountType)
                       ],
                     ),
                     //SizedBox(height: Dimensions.PADDING_SIZE_LARGE,),
@@ -57,7 +57,7 @@ class ServiceInformationCard extends StatelessWidget {
                               Directionality(
                                 textDirection: TextDirection.ltr,
                                 child: Text(
-                                    service.avgRating!.toStringAsFixed(2),
+                                    service.avgRating?.toStringAsFixed(2) ?? '0.00',
                                     style: robotoBold.copyWith(color: Theme.of(context).colorScheme.secondary)),
                               ),
                             ],
@@ -68,7 +68,7 @@ class ServiceInformationCard extends StatelessWidget {
                           textDirection: TextDirection.ltr,
                           child: Text(
                               "(${service.ratingCount})",
-                              style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .6))),
+                              style: robotoBold.copyWith(color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .6))),
                         )
                       ],
                     ),
@@ -95,7 +95,7 @@ class ServiceInformationCard extends StatelessWidget {
                                       Gaps.horizontalGapOf(5),
                                       Directionality(textDirection: TextDirection.ltr,
                                         child: Text(
-                                            service.avgRating!.toStringAsFixed(2),
+                                            service.avgRating?.toStringAsFixed(2) ?? '0.00',
                                             style: robotoBold.copyWith(color: Theme.of(context).colorScheme.secondary)),
                                       ),
                                     ],
@@ -106,7 +106,7 @@ class ServiceInformationCard extends StatelessWidget {
                                   textDirection: TextDirection.ltr,
                                   child: Text(
                                       "(${service.ratingCount})",
-                                      style: robotoBold.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: .6))),
+                                      style: robotoBold.copyWith(color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .6))),
                                 )
                               ],
                             ):const SizedBox(),
@@ -116,7 +116,7 @@ class ServiceInformationCard extends StatelessWidget {
                           Row(
                             children: [
                               //price with discount
-                              if(discount!.discountAmount! > 0)
+                              if((discount?.discountAmount ?? 0) > 0)
                                 Padding(
                                   padding:  EdgeInsets.only(left: Get.find<LocalizationController>().isLtr ?  0.0 : Dimensions.paddingSizeExtraSmall),
                                   child: Directionality(
@@ -128,15 +128,15 @@ class ServiceInformationCard extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              discount!.discountAmount! > 0 ?
+                              (discount?.discountAmount ?? 0) > 0 ?
                               Padding(
                                 padding:  EdgeInsets.only(left: Get.find<LocalizationController>().isLtr ? Dimensions.paddingSizeExtraSmall : 0.0),
                                 child: Directionality(
                                   textDirection: TextDirection.ltr,
                                   child: Text(PriceConverter.convertPrice(
                                     lowestPrice,
-                                    discount: discount!.discountAmount!.toDouble(),
-                                    discountType: discount!.discountAmountType,
+                                    discount: (discount?.discountAmount ?? 0).toDouble(),
+                                    discountType: discount?.discountAmountType,
                                     isShowLongPrice:true,
                                   ),
                                     style: robotoRegular.copyWith(fontSize: Dimensions.paddingSizeDefault, color:Get.isDarkMode ? Theme.of(context).primaryColorLight: Theme.of(context).primaryColor),
@@ -164,12 +164,12 @@ class ServiceInformationCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              serviceController.service!.shortDescription!,
+                              service.shortDescription ?? service.description ?? '',
                               textAlign: TextAlign.start, maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: robotoRegular.copyWith(
                                   fontSize: 14,
-                                  color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.6)
+                                  color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.6)
                               ),),
                           ),
                         ],

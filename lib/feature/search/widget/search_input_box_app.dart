@@ -55,10 +55,8 @@ class _SearchInputBoxAppState extends State<SearchInputBoxApp> {
                 }else if (searchController.searchController.text.isEmpty){
                   customSnackBar('search_text_empty_message'.tr, showDefaultSnackBar: false, type: ToasterMessageType.info);
                 }else{
-                  Get.back();
                   FocusScope.of(context).unfocus();
-                  Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.searchController.text));
-                  FocusScope.of(context).unfocus();
+                  RouteHelper.toSearchResult(queryText: searchController.searchController.text);
                 }
               },
               child: Container(height: 45, width: 45,
@@ -68,7 +66,10 @@ class _SearchInputBoxAppState extends State<SearchInputBoxApp> {
                   shape: BoxShape.circle,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                child: Image.asset(Images.searchIcon),
+                child: Image.asset(
+                  Images.searchIcon,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.search, color: Colors.white, size: 18),
+                ),
               ),
             ) ,
           ),
@@ -83,9 +84,8 @@ class _SearchInputBoxAppState extends State<SearchInputBoxApp> {
               if(text.length > 255){
                 customSnackBar('search_text_length_message'.tr, type: ToasterMessageType.info);
               }else{
-                Get.back();
                 FocusScope.of(context).unfocus();
-                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: text));
+                RouteHelper.toSearchResult(queryText: text);
               }
             }else{
               customSnackBar('search_text_empty_message'.tr, type: ToasterMessageType.info);

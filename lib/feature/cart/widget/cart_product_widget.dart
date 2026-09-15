@@ -86,7 +86,10 @@ class CartServiceWidget extends StatelessWidget {
                         Expanded(
                           child: InkWell(
                             onTap: (){
-                              Get.toNamed(RouteHelper.getServiceRoute(cart.serviceId));
+                              if (cart.serviceId.isEmpty) {
+                                return;
+                              }
+                              RouteHelper.toServiceDetails(cart.serviceId);
                             },
                             child: SizedBox(
                               width:ResponsiveHelper.isMobile(context)? Get.width / 1.8 : Get.width / 4,

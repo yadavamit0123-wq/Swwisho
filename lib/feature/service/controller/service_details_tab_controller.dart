@@ -7,9 +7,7 @@ class ServiceTabController extends GetxController with GetSingleTickerProviderSt
   final ServiceDetailsRepo serviceDetailsRepo;
   ServiceTabController({required this.serviceDetailsRepo});
 
-  List<Faqs>? faqs = Get.find<ServiceDetailsController>().service?.faqs ?? [];
-
-
+  List<Faqs>? get faqs => Get.find<ServiceDetailsController>().service?.faqs ?? [];
 
   List<Widget> serviceDetailsTabs(){
     if(faqs?.isNotEmpty ?? false){
@@ -37,12 +35,12 @@ class ServiceTabController extends GetxController with GetSingleTickerProviderSt
   ReviewContent? reviewContent;
   List<Review>? _reviewList;
   List<Review>? get reviewList => _reviewList;
-  bool get isLoading => _isLoading!;
-  int? get pageSize => _pageSize!;
+  bool get isLoading => _isLoading ?? false;
+  int? get pageSize => _pageSize;
   Rating? _rating;
   String? _serviceID;
   int? _offset = 1;
-  Rating get rating => _rating!;
+  Rating get rating => _rating ?? Rating();
   int? get offset => _offset;
   String? get serviceID => _serviceID;
 
@@ -54,27 +52,29 @@ class ServiceTabController extends GetxController with GetSingleTickerProviderSt
 
   Future<void> getServiceReview(String serviceID,int offset, {bool reload = true,}) async {
     _offset = offset;
-    Response response = await serviceDetailsRepo.getServiceReviewList(serviceID,offset);
-    if (response.statusCode == 200 && response.body['response_code'] ==  'default_200') {
-      if(reload){
-        _reviewList = [];
+    try {
+      Response response = await serviceDetailsRepo.getServiceReviewList(serviceID,offset);
+      if (response.statusCode == 200 && response.body is Map && response.body['response_code'] ==  'default_200') {
+        if(reload){
+          _reviewList = [];
+        }
+         reviewContent = ReviewContent.fromJson(response.body['content']);
+        if(_reviewList != null && offset != 1){
+          _reviewList!.addAll(reviewContent?.reviews?.reviewList ?? []);
+        }else{
+          _reviewList = [];
+          _reviewList!.addAll(reviewContent?.reviews?.reviewList ?? []);
+        }
+        _rating = reviewContent?.rating;
+        _pageSize = response.body['content']?['reviews']?['last_page']?? 0;
       }
-       reviewContent = ReviewContent.fromJson(response.body['content']);
-      if(_reviewList != null && offset != 1){
-        _reviewList!.addAll(reviewContent!.reviews!.reviewList!);
-      }else{
-        _reviewList = [];
-        _reviewList!.addAll(reviewContent!.reviews!.reviewList!);
-      }
-      _rating = reviewContent!.rating;
-      _pageSize = response.body['content']['reviews']['last_page']?? 0;
-    }
+    } catch (_) {}
     update();
   }
 
   @override
   void onClose() {
-    controller!.dispose();
+    controller?.dispose();
     super.onClose();
   }
 

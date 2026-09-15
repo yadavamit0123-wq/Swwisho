@@ -75,7 +75,7 @@ class BannerController extends GetxController implements GetxService {
         }
         break;
       case 'service':
-        Get.toNamed(RouteHelper.getServiceRoute(resourceID));
+        RouteHelper.toServiceDetails(resourceID);
         break;
       default:
     }

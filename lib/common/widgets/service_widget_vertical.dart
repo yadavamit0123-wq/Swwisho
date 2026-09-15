@@ -147,9 +147,9 @@ class ServiceWidgetVertical extends StatelessWidget {
                 return;
               }
               if(fromPage=="search_page"){
-                Get.toNamed(RouteHelper.getServiceRoute(serviceId,fromPage:"search_page"),);
+                RouteHelper.toServiceDetails(serviceId, fromPage: "search_page");
               }else{
-                Get.toNamed(RouteHelper.getServiceRoute(serviceId),);
+                RouteHelper.toServiceDetails(serviceId);
               }
             }))
           ],),
