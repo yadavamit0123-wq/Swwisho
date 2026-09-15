@@ -1,7 +1,7 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:demandium/utils/core_export.dart';
-
-import '../../utils/appp_upgrade_wrapper.dart';
 
 class OfferScreen extends StatefulWidget {
   const OfferScreen({super.key});
@@ -10,7 +10,9 @@ class OfferScreen extends StatefulWidget {
 }
 
 class _OfferScreenState extends State<OfferScreen> {
-  final ScrollController scrollController = ScrollController();
+  bool _loading = true;
+  String? _error;
+  List<Service> _offers = [];
 
   @override
   void initState() {
@@ -18,133 +20,225 @@ class _OfferScreenState extends State<OfferScreen> {
     _loadOffers();
   }
 
-  Future<void> _loadOffers() async {
-    try {
-      await HomeScreen.ensureZoneHeader();
-      await Get.find<ServiceController>().getOffersList(1, true);
-    } catch (_) {
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is String && data.isNotEmpty) {
       try {
-        await Get.find<ServiceController>().getOffersList(1, true);
+        data = jsonDecode(data);
       } catch (_) {}
+    }
+    if (data is List) {
+      return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    }
+    if (data is Map) {
+      final content = data['content'];
+      dynamic list;
+      if (content is Map) {
+        list = content['data'] ?? content['services'];
+      } else if (content is List) {
+        list = content;
+      } else {
+        list = data['data'];
+      }
+      if (list is List) {
+        return list.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+    }
+    return [];
+  }
+
+  String _price(Service service) {
+    try {
+      num lowest = service.variationsAppFormat?.defaultPrice ?? 0;
+      final variations = service.variationsAppFormat?.zoneWiseVariations ?? [];
+      for (final variation in variations) {
+        final price = variation.price ?? 0;
+        if (lowest == 0 || price < lowest) {
+          lowest = price;
+        }
+      }
+      if (lowest <= 0) {
+        return '';
+      }
+      return PriceConverter.convertPrice(lowest.toDouble());
+    } catch (_) {
+      return '';
     }
   }
 
-  @override
-  void dispose() {
-    scrollController.dispose();
-    super.dispose();
+  Future<void> _loadOffers() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await HomeScreen.ensureZoneHeader();
+      final response = await Get.find<ApiClient>().getData('${AppConstants.offerListUri}?limit=50&offset=1');
+      final offers = <Service>[];
+      for (final item in _extractList(response.body)) {
+        try {
+          offers.add(Service.fromJson(item));
+        } catch (_) {}
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _offers = offers;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _loading = false;
+        _error = 'Offers load nahi ho paayi. Pull to refresh karke try karein.';
+      });
+    }
   }
 
-  Widget _mobileBanner() {
-    return SizedBox(
-      height: 100,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            Images.offerBanner,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => ColoredBox(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          ColoredBox(
-            color: Colors.black54,
-            child: Center(
-              child: Text(
-                'current_offers'.tr,
-                style: robotoMedium.copyWith(
-                  color: Colors.white,
-                  fontSize: Dimensions.fontSizeExtraLarge,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+  void _openAddToCart(Service service) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ServiceCenterDialog(service: service),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      endDrawer: ResponsiveHelper.isDesktop(context) ? const MenuDrawer() : null,
-      appBar: CustomAppBar(
-        isBackButtonExist: false,
-        title: 'offers'.tr,
+      backgroundColor: const Color(0xFFF5F6F8),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text('offers'.tr),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
       ),
-      body: AppUpgradeWrapper(
-        child: GetBuilder<ServiceController>(
-          builder: (serviceController) {
-            final offers = serviceController.offerBasedServiceList;
-
-            return RefreshIndicator(
-              onRefresh: _loadOffers,
-              child: CustomScrollView(
-                controller: scrollController,
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: ClampingScrollPhysics(),
-                ),
-                slivers: [
-                  if (ResponsiveHelper.isMobile(context))
-                    SliverToBoxAdapter(child: _mobileBanner()),
-
-                  if (!ResponsiveHelper.isMobile(context) &&
-                      offers != null &&
-                      offers.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          Dimensions.paddingSizeDefault,
-                          Dimensions.paddingSizeDefault,
-                          Dimensions.paddingSizeDefault,
-                          Dimensions.paddingSizeSmall,
-                        ),
-                        child: TitleWidget(title: 'current_offers'.tr),
-                      ),
-                    ),
-
-                  SliverToBoxAdapter(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: Dimensions.webMaxWidth,
-                          minHeight: offers == null
-                              ? MediaQuery.of(context).size.height * 0.5
-                              : 0,
-                        ),
-                        child: PaginatedListView(
-                          scrollController: scrollController,
-                          totalSize: serviceController.offerBasedServiceContent?.total,
-                          offset: serviceController.offerBasedServiceContent?.currentPage,
-                          onPaginate: (int offset) async =>
-                              await serviceController.getOffersList(offset, false),
-                          bottomPadding: Dimensions.paddingSizeExtraLarge,
-                          itemView: ServiceViewVertical(
-                            service: offers,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: ResponsiveHelper.isDesktop(context)
-                                  ? Dimensions.paddingSizeExtraSmall
-                                  : Dimensions.paddingSizeDefault,
-                              vertical: ResponsiveHelper.isDesktop(context)
-                                  ? Dimensions.paddingSizeExtraSmall
-                                  : Dimensions.paddingSizeSmall,
-                            ),
-                            type: 'others',
-                            noDataType: NoDataType.offers,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  if (ResponsiveHelper.isDesktop(context))
-                    const SliverToBoxAdapter(child: FooterView()),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadOffers,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            Container(
+              height: 90,
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-          },
+              alignment: Alignment.center,
+              child: Text(
+                'current_offers'.tr,
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 48),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            if (!_loading && _error != null)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(_error!, textAlign: TextAlign.center),
+                    TextButton(onPressed: _loadOffers, child: const Text('Retry')),
+                  ],
+                ),
+              ),
+            if (!_loading && _error == null && _offers.isEmpty)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(24, 48, 24, 24),
+                child: Center(child: Text('No offer found')),
+              ),
+            if (!_loading && _offers.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _offers.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    mainAxisExtent: 230,
+                  ),
+                  itemBuilder: (context, index) {
+                    final service = _offers[index];
+                    final price = _price(service);
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              final id = service.id;
+                              if (id == null || id.isEmpty) {
+                                return;
+                              }
+                              Get.toNamed(RouteHelper.getServiceRoute(id));
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                  child: SizedBox(
+                                    height: 110,
+                                    width: double.infinity,
+                                    child: CustomImage(
+                                      image: service.thumbnailFullPath ?? service.coverImageFullPath ?? '',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+                                  child: Text(
+                                    service.name ?? '',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                ),
+                                if (price.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                                    child: Text(
+                                      price,
+                                      style: TextStyle(
+                                        color: Theme.of(context).primaryColor,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          Align(
+                            alignment: Alignment.bottomRight,
+                            child: IconButton(
+                              onPressed: () => _openAddToCart(service),
+                              icon: Icon(Icons.add, color: Theme.of(context).primaryColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
         ),
       ),
     );

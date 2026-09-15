@@ -58,7 +58,12 @@ class MenuButton extends StatelessWidget {
               Get.back();
               Get.bottomSheet(const ChooseLanguageBottomSheet(), backgroundColor: Colors.transparent, isScrollControlled: true);
             } else {
-              Get.offNamed(menu.route!);
+              if (menu.route == RouteHelper.getServiceArea()) {
+                Get.back();
+                Get.to(() => const ServiceAreaScreen());
+              } else {
+                Get.toNamed(menu.route!);
+              }
             }
           }
         }))

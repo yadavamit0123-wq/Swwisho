@@ -7,12 +7,12 @@ class ServiceTabController extends GetxController with GetSingleTickerProviderSt
   final ServiceDetailsRepo serviceDetailsRepo;
   ServiceTabController({required this.serviceDetailsRepo});
 
-  List<Faqs>? faqs = Get.find<ServiceDetailsController>().service!.faqs;
+  List<Faqs>? faqs = Get.find<ServiceDetailsController>().service?.faqs ?? [];
 
 
 
   List<Widget> serviceDetailsTabs(){
-    if(faqs!.isNotEmpty){
+    if(faqs?.isNotEmpty ?? false){
       return  [
         Tab(child: Text("service_overview".tr,maxLines: 2,),),
         Tab(child: Text("faqs".tr,maxLines: 2,),),
@@ -49,7 +49,7 @@ class ServiceTabController extends GetxController with GetSingleTickerProviderSt
   @override
   void onInit() {
     super.onInit();
-    controller = TabController(vsync: this, length: faqs!.isNotEmpty ? 3 :2);
+    controller = TabController(vsync: this, length: (faqs?.isNotEmpty ?? false) ? 3 : 2);
   }
 
   Future<void> getServiceReview(String serviceID,int offset, {bool reload = true,}) async {

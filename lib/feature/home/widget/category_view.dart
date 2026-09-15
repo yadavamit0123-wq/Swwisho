@@ -91,9 +91,9 @@ class CategoryView extends StatelessWidget {
                           if (id == null || id.isEmpty) {
                             return;
                           }
-                          Get.toNamed(RouteHelper.getCategoryProductRoute(
-                            id, selected.name ?? '',
-                            index.toString(),
+                          Get.to(() => CategorySubCategoryScreen(
+                            categoryID: id,
+                            categoryIndex: index.toString(),
                           ));
                         }))
                       ],

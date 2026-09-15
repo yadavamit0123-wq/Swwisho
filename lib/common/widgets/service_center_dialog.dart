@@ -1,6 +1,7 @@
+import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:demandium/utils/core_export.dart';
-
 
 class ServiceCenterDialog extends StatefulWidget {
   final Service? service;
@@ -14,352 +15,220 @@ class ServiceCenterDialog extends StatefulWidget {
     required this.service,
     this.cart,
     this.cartIndex,
-    this.isFromDetails = false, this.providerData});
+    this.isFromDetails = false,
+    this.providerData,
+  });
 
   @override
-  State<ServiceCenterDialog> createState() => _ProductBottomSheetState();
+  State<ServiceCenterDialog> createState() => _ServiceCenterDialogState();
 }
 
-class _ProductBottomSheetState extends State<ServiceCenterDialog> {
-  bool _preparing = true;
-  Service? _resolvedService;
+class _ServiceCenterDialogState extends State<ServiceCenterDialog> {
+  bool _loading = true;
+  String? _error;
+  Service? _service;
 
   @override
   void initState() {
     super.initState();
-    _prepareCartDialog();
+    _service = widget.service;
+    _prepare();
   }
 
-  Future<void> _prepareCartDialog() async {
+  Future<void> _prepare() async {
     try {
       await HomeScreen.ensureZoneHeader();
-
-      Service? service = widget.service;
       final serviceId = widget.service?.id;
       if (serviceId != null && serviceId.isNotEmpty) {
         try {
-          final detailsController = Get.find<ServiceDetailsController>();
-          await detailsController.getServiceDetails(serviceId);
-          service = detailsController.service ?? service;
+          final response = await Get.find<ApiClient>().getData('${AppConstants.serviceDetailsUri}/$serviceId');
+          dynamic body = response.body;
+          if (body is String && body.isNotEmpty) {
+            body = jsonDecode(body);
+          }
+          final content = body is Map ? body['content'] : null;
+          if (content is Map) {
+            _service = Service.fromJson(Map<String, dynamic>.from(content));
+          }
         } catch (_) {}
       }
 
-      _resolvedService = service;
+      final service = _service;
       if (service != null) {
         Get.find<CartController>().setInitialCartList(service);
       }
-      Get.find<CartController>().updatePreselectedProvider(null, shouldUpdate: false);
-      try {
-        Get.find<AllSearchController>().searchFocus.unfocus();
-      } catch (_) {}
+    } catch (_) {
+      _error = 'Service variants load nahi ho paaye';
     } finally {
       if (mounted) {
-        setState(() => _preparing = false);
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _addToCart() async {
+    try {
+      await Get.find<CartController>().addMultipleCartToServer(
+        providerId: widget.providerData?.id ?? Get.find<CartController>().selectedProvider?.id ?? '',
+      );
+      if (Get.find<AuthController>().isLoggedIn()) {
+        await Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
+      }
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if(ResponsiveHelper.isDesktop(context)) {
-      return  Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radiusExtraLarge)),
-      insetPadding: const EdgeInsets.all(30),
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      child: pointerInterceptor(),
-    );
-    }
-    return pointerInterceptor();
-  }
-
-  pointerInterceptor(){
-    if (_preparing) {
-      return Padding(
-        padding: EdgeInsets.only(top: ResponsiveHelper.isWeb() ? 0 : Dimensions.cartDialogPadding),
-        child: Container(
-          width: ResponsiveHelper.isDesktop(context) ? Dimensions.webMaxWidth / 2 : Dimensions.webMaxWidth,
-          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
-          ),
-          child: SizedBox(
-            height: 220,
-            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          ),
-        ),
-      );
-    }
-
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
-      padding: EdgeInsets.only(top: ResponsiveHelper.isWeb()? 0 :Dimensions.cartDialogPadding),
-      child: PointerInterceptor(
-        child: Container(
-          width:ResponsiveHelper.isDesktop(context)? Dimensions.webMaxWidth/2:Dimensions.webMaxWidth,
-          padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(Dimensions.radiusExtraLarge)),
-          ),
-          child:  GetBuilder<CartController>(builder: (cartControllerInit) {
-              return GetBuilder<ServiceController>(builder: (serviceController) {
-                final service = _resolvedService ?? widget.service;
-                final hasVariations = cartControllerInit.initialCartList.isNotEmpty;
+      padding: EdgeInsets.only(bottom: bottom),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: GetBuilder<CartController>(
+          builder: (cartController) {
+            final service = _service ?? widget.service;
+            final variants = cartController.initialCartList;
 
-                if(service != null && hasVariations) {
-                  return SingleChildScrollView(
-                    child: Column(mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(width: Dimensions.paddingSizeLarge,),
-                          ClipRRect(
-                              borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeDefault)),
-                              child: CustomImage(
-                                image: service.thumbnailFullPath ?? '',
-                                height: Dimensions.imageSizeButton,
-                                width: Dimensions.imageSizeButton,
-                              ),
-                            ),
-                          Container(
-                              height: 40, width: 40, alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white70.withValues(alpha: 0.6),
-                                  boxShadow:Get.isDarkMode?null:[BoxShadow(
-                                    color: Colors.grey[300]!, blurRadius: 2, spreadRadius: 1,
-                                  )]
-                              ),
-                              child: InkWell(
-                                  onTap: () => Get.back(),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.black54,
-                                  )
-                              ),
-                            )
-                        ],
-                      ),
-                      const SizedBox(height: Dimensions.paddingSizeEight,),
-                      Text(
-                        service.name ?? '',
-                        style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: Dimensions.paddingSizeMini,),
-                      Text(
-                        cartControllerInit.initialCartList.length > 1 ?
-                        "${cartControllerInit.initialCartList.length} ${'variations_available'.tr}" :
-                        "${cartControllerInit.initialCartList.length} ${'variation_available'.tr}",
-                        style: robotoRegular.copyWith(
-                          color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: .5),
-                        ),
-                      ),
-                      Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: Get.height * 0.1,
-                                maxHeight: Get.height * 0.4
-                              ),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: cartControllerInit.initialCartList.length,
-                                  itemBuilder: (context, index) {
-                                    //variation item
-                                    return Padding(
-                                      padding:  const EdgeInsets.symmetric(vertical:Dimensions.paddingSizeSmall),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(vertical:Dimensions.paddingSizeExtraSmall),
-                                        decoration: BoxDecoration(
-                                            color: Theme.of(context).hoverColor,
-                                            borderRadius: const BorderRadius.all(Radius.circular(Dimensions.paddingSizeDefault))
-                                        ),
-                                        child: GetBuilder<CartController>(builder: (cartController){
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      cartControllerInit.initialCartList[index].variantKey.replaceAll('-', ' '), style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeSmall),
-                                                      maxLines: 2, overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: Dimensions.paddingSizeExtraSmall,),
-                                                    Directionality(
-                                                      textDirection: TextDirection.ltr,
-                                                      child: Text(
-                                                          PriceConverter.convertPrice(double.parse(cartControllerInit.initialCartList[index].price.toString()),isShowLongPrice:true),
-                                                          style: robotoMedium.copyWith(color:  Get.isDarkMode? Theme.of(context).primaryColorLight: Theme.of(context).primaryColor, fontSize: Dimensions.fontSizeSmall)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              // Expanded(child: SizedBox()),
-                                              Expanded( flex:1,
-                                                child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                                                  cartControllerInit.initialCartList[index].quantity > 0 ? InkWell(
-                                                    onTap: (){
-                                                      cartController.updateQuantity(index, false);
-                                                    },
-                                                    child: Container(
-                                                      height: 30, width: 30,
-                                                      margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                                      decoration: BoxDecoration(shape: BoxShape.circle, color:  Theme.of(context).colorScheme.secondary),
-                                                      alignment: Alignment.center,
-                                                      child: Icon(Icons.remove , size: 15, color:Theme.of(context).cardColor,),
-                                                    ),
-                                                  ) : const SizedBox(),
+            if (_loading) {
+              return const SizedBox(
+                height: 180,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              );
+            }
 
-                                                  cartControllerInit.initialCartList[index].quantity > 0 ? Text(
-                                                    cartControllerInit.initialCartList[index].quantity.toString(),
-                                                  ) : const SizedBox(),
-
-                                                  GestureDetector(
-                                                    onTap: (){
-                                                      cartController.updateQuantity(index, true);
-
-                                                    },
-                                                    child: Container(
-                                                      height: 30, width: 30,
-                                                      margin: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                                                      decoration: BoxDecoration(
-                                                          shape: BoxShape.circle,
-                                                          color:  Theme.of(context).colorScheme.secondary
-                                                      ),
-                                                      alignment: Alignment.center,
-                                                      child: Icon(
-                                                        Icons.add ,
-                                                        size: 15,
-                                                        color:Theme.of(context).cardColor,
-                                                      ),
-                                                    ),
-                                                  )
-                                                ]),
-                                              ),
-                                            ]),
-                                          );
-                                        },
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                            ),
-                            const SizedBox(height: Dimensions.paddingSizeLarge),
-                          ]),
-
-                      GetBuilder<CartController>(builder: (cartController) {
-                        bool addToCart = true;
-                        return cartController.isLoading ? const Center(child: CircularProgressIndicator()) :
-
-                        Row(spacing: Dimensions.paddingSizeSmall, children: [
-                          if(Get.find<SplashController>().configModel.content?.directProviderBooking==1 && (widget.providerData !=null || cartController.selectedProvider !=null))
-
-                          GestureDetector(
-                            onTap: (){
-                              // showModalBottomSheet(
-                              //   useRootNavigator: true,
-                              //   isScrollControlled: true,
-                              //   backgroundColor: Colors.transparent,
-                              //   context: context, builder: (context) =>  AvailableProviderWidget(
-                              //   subcategoryId: widget.service?.subCategoryId ??"",
-                              // ));
-                            },
-                            child:  SelectedProductWidget(providerData: widget.providerData ?? cartController.selectedProvider,),
-                          ),
-
-                          if(Get.find<SplashController>().configModel.content?.biddingStatus==1)
-                          GestureDetector(
-                            onTap: (){
-                              Get.back();
-                              showModalBottomSheet(
-                              backgroundColor: Colors.transparent,
-                              isScrollControlled: true,
-                              context: Get.context!,
-                              builder: (BuildContext context){
-                                return const BottomCreatePostDialog();
-                              });
-                              if(widget.service!=null){
-                                Get.find<CreatePostController>().resetCreatePostValue(removeService: false);
-                                Get.find<CreatePostController>().updateSelectedService(widget.service!);
-
-                              }
-                            },
-                            child: Container(
-                              height:  ResponsiveHelper.isDesktop(context)? 50 : 45,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),width: 0.7),
-                                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
-                              child: Center(child: Hero(tag: 'provide_image',
-                                child: Image.asset(Images.customPostIcon,height: 30,width: 30,),
-                              )),
-                            ),
-                          ),
-
-
-
-                          Expanded(child: CustomButton(
-                            height: ResponsiveHelper.isDesktop(context)? 55 : 45,
-                            onPressed: cartControllerInit.isButton  ? () async{
-                              bool isLoggedIn = Get.find<AuthController>().isLoggedIn();
-
-                              if(addToCart) {
-                                addToCart = false;
-                                await cartController.addMultipleCartToServer(providerId: cartController.selectedProvider?.id ?? widget.providerData?.id ??"");
-                                if(isLoggedIn){
-                                  await cartController.getCartListFromServer(shouldUpdate: true);
-                                }
-                              }
-                            }: null,
-                            buttonText:(cartController.cartList.isNotEmpty && cartController.cartList.elementAt(0).serviceId == service.id)
-                                ? 'update_cart'.tr : 'add_to_cart'.tr,
-                            ),
-                          )
-                        ]);
-                      }),
-                    ],
-                  ),
-                  );
-                }
-                return Stack(
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Positioned(
-                      top: 0,
-                      right: 20,
-                      child: Container(
-                        height: 40, width: 40, alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white70.withValues(alpha: 0.6),
-                            boxShadow:[BoxShadow(
-                              color: Colors.grey[Get.find<ThemeController>().darkTheme ? 700 : 300]!, blurRadius: 2, spreadRadius: 1,
-                            )]
-                        ),
-                        child: InkWell(
-                            onTap: () => Get.back(),
-                            child: const Icon(Icons.close)),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                if (service != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 64,
+                      width: 64,
+                      child: CustomImage(
+                        image: service.thumbnailFullPath ?? '',
+                        fit: BoxFit.cover,
                       ),
                     ),
-                    SizedBox(
-                        height: Get.height / 7,
-                        child: Center(child: Text('no_variation_is_available'.tr,style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeLarge),)))
-                  ],
-                );
-              });
-            }
-          ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    service.name ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    variants.isEmpty
+                        ? 'no_variation_is_available'.tr
+                        : '${variants.length} ${variants.length > 1 ? 'variations_available'.tr : 'variation_available'.tr}',
+                    style: const TextStyle(color: Color(0xFF667085)),
+                  ),
+                ],
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(_error!, textAlign: TextAlign.center),
+                ],
+                const SizedBox(height: 12),
+                if (variants.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: variants.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final item = variants[index];
+                        String priceText = '';
+                        try {
+                          priceText = PriceConverter.convertPrice(item.price.toDouble(), isShowLongPrice: true);
+                        } catch (_) {
+                          priceText = item.price.toString();
+                        }
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F6F8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.variantKey.replaceAll('-', ' '),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      priceText,
+                                      style: TextStyle(
+                                        color: Theme.of(context).primaryColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: item.quantity > 0 ? () => cartController.updateQuantity(index, false) : null,
+                                icon: const Icon(Icons.remove_circle_outline),
+                              ),
+                              Text('${item.quantity}'),
+                              IconButton(
+                                onPressed: () => cartController.updateQuantity(index, true),
+                                icon: const Icon(Icons.add_circle_outline),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: cartController.isButton && !cartController.isLoading ? _addToCart : null,
+                    child: cartController.isLoading
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text('add_to_cart'.tr),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

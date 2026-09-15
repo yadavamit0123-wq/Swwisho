@@ -451,10 +451,13 @@ class RouteHelper {
           page: () => getRoute(CategoryScreen(fromPage: Get.parameters['fromPage'],campaignID:Get.parameters['campaignID']))
       ),
       GetPage(name: categoryProduct, page: () {
-        return getRoute(CategorySubCategoryScreen(
-          categoryID: Get.parameters['id'] ?? "",
-          categoryIndex: Get.parameters['index'] ?? "0",
-        ));
+        final args = Get.arguments;
+        final argId = args is Map ? args['id']?.toString() : null;
+        final argIndex = args is Map ? args['index']?.toString() : null;
+        return CategorySubCategoryScreen(
+          categoryID: Get.parameters['id'] ?? argId ?? "",
+          categoryIndex: Get.parameters['index'] ?? argIndex ?? "0",
+        );
       }),
       GetPage(name: support, page: () => SupportScreen()),
       GetPage(name: update, page: () => UpdateScreen(fromPage: Get.parameters['update'])),

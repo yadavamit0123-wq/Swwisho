@@ -408,10 +408,9 @@ class _HomeCategoryGrid extends StatelessWidget {
                   if (id == null || id.isEmpty) {
                     return;
                   }
-                  Get.toNamed(RouteHelper.getCategoryProductRoute(
-                    id,
-                    category.name ?? '',
-                    index.toString(),
+                  Get.to(() => CategorySubCategoryScreen(
+                    categoryID: id,
+                    categoryIndex: index.toString(),
                   ));
                 },
                 child: Container(

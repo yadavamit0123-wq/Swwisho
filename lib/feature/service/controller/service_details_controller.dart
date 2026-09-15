@@ -9,7 +9,7 @@ class ServiceDetailsController extends GetxController implements GetxService{
   Service? _service;
   bool? _isLoading;
   Service? get service => _service;
-  bool get isLoading => _isLoading!;
+  bool get isLoading => _isLoading ?? false;
 
 
   ///discount and discount type based on category discount and service discount
@@ -21,7 +21,6 @@ class ServiceDetailsController extends GetxController implements GetxService{
 
   ///call service details data based on service id
   Future<void> getServiceDetails(String serviceID,{String fromPage=""}) async {
-    _service = null;
     try {
       Response response = await serviceDetailsRepo.getServiceDetails(serviceID,fromPage);
       if (response.statusCode == 200 && response.body is Map && response.body['response_code'] == 'default_200') {
