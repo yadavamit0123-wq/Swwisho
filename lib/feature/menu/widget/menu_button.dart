@@ -61,6 +61,10 @@ class MenuButton extends StatelessWidget {
               if (menu.route == RouteHelper.getServiceArea()) {
                 Get.back();
                 Get.to(() => const ServiceAreaScreen());
+              } else if (menu.route == RouteHelper.getLoyaltyPointScreen() ||
+                  (menu.route?.startsWith(RouteHelper.loyaltyPoint) ?? false)) {
+                Get.back();
+                Get.to(() => const LoyaltyPointScreen());
               } else {
                 Get.toNamed(menu.route!);
               }

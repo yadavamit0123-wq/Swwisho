@@ -21,6 +21,15 @@ class ServiceDetailsController extends GetxController implements GetxService{
 
   ///call service details data based on service id
   Future<void> getServiceDetails(String serviceID,{String fromPage=""}) async {
+    if (_service?.id != serviceID) {
+      Service? cached;
+      try {
+        cached = Get.find<ServiceController>().findCachedService(serviceID);
+      } catch (_) {}
+      _service = cached;
+      _isLoading = cached == null;
+      update();
+    }
     try {
       Response response = await serviceDetailsRepo.getServiceDetails(serviceID,fromPage);
       if (response.statusCode == 200 && response.body is Map && response.body['response_code'] == 'default_200') {

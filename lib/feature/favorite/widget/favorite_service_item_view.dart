@@ -183,11 +183,8 @@ class FavoriteServiceItemView extends StatelessWidget {
                 alignment: Get.find<LocalizationController>().isLtr ? Alignment.bottomRight : Alignment.bottomLeft,
                 child: Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                   child: InkWell(
-                    onTap: () async {
-                      await HomeScreen.ensureZoneHeader();
-                      if (!context.mounted) {
-                        return;
-                      }
+                    onTap: () {
+                      HomeScreen.ensureZoneHeader();
                       showModalBottomSheet(
                         context: context,
                         useRootNavigator: true,

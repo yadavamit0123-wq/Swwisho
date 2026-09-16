@@ -48,7 +48,7 @@ class RecentSearch extends StatelessWidget {
                     Get.back();
                     FocusScope.of(context).unfocus();
                     searchController.populatedSearchController(searchController.historyList![index]);
-                    RouteHelper.toSearchResult(queryText: searchController.historyList![index]);
+                    Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.historyList![index]));
                   },
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: Get.width * 0.85,),

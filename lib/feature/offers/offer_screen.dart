@@ -17,6 +17,13 @@ class _OfferScreenState extends State<OfferScreen> {
   @override
   void initState() {
     super.initState();
+    try {
+      final cached = Get.find<ServiceController>().offerBasedServiceList;
+      if (cached != null && cached.isNotEmpty) {
+        _offers = List<Service>.from(cached);
+        _loading = false;
+      }
+    } catch (_) {}
     _loadOffers();
   }
 
@@ -66,12 +73,14 @@ class _OfferScreenState extends State<OfferScreen> {
   }
 
   Future<void> _loadOffers() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_offers.isEmpty) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
-      await HomeScreen.ensureZoneHeader();
+      HomeScreen.ensureZoneHeader();
       final response = await Get.find<ApiClient>().getData('${AppConstants.offerListUri}?limit=50&offset=1');
       final offers = <Service>[];
       for (final item in _extractList(response.body)) {

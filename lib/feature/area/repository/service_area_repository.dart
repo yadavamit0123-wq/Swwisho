@@ -6,6 +6,6 @@ class ServiceAreaRepo extends DataSyncRepo {
   ServiceAreaRepo({required super.apiClient, required SharedPreferences super.sharedPreferences});
 
   Future<ApiResponseModel<T>> getZoneList<T>({required DataSourceEnum source}) async {
-    return await fetchData<T>(AppConstants.getZoneListApi, source, method: ApiMethodType.post, body: {});
+    return await fetchData<T>(AppConstants.getZonesApi, source, method: ApiMethodType.get);
   }
 }

@@ -68,7 +68,7 @@ class _MenuDrawerState  extends State<MenuDrawer> with SingleTickerProviderState
     if(Get.find<SplashController>().configModel.content!.loyaltyPointStatus != 0 && Get.find<AuthController>().isLoggedIn())
     Menu(icon: Images.myPoint, title: 'loyalty_point'.tr, onTap: () {
       Get.back();
-      Get.toNamed(RouteHelper.getLoyaltyPointScreen());
+      Get.to(() => const LoyaltyPointScreen());
     }),
 
     if(Get.find<SplashController>().configModel.content?.referEarnStatus==1)

@@ -83,6 +83,32 @@ class ServiceController extends GetxController implements GetxService {
   bool _isSearching = false;
   bool get isSearching => _isSearching;
 
+  Service? findCachedService(String id) {
+    if (id.isEmpty) {
+      return null;
+    }
+    Service? from(List<Service>? list) {
+      if (list == null) {
+        return null;
+      }
+      for (final service in list) {
+        if (service.id == id) {
+          return service;
+        }
+      }
+      return null;
+    }
+    return from(_allService) ??
+        from(_popularServiceList) ??
+        from(_trendingServiceList) ??
+        from(_recommendedServiceList) ??
+        from(_recentlyViewServiceList) ??
+        from(_subCategoryBasedServiceList) ??
+        from(_campaignBasedServiceList) ??
+        from(_offerBasedServiceList) ??
+        from(_searchServiceList);
+  }
+
   void updateSearchServiceList(String text) {
     if (_subCategoryBasedServiceList != null && (_subCategoryBasedServiceList?.isNotEmpty ?? false)) {
       _isSearching = true;
@@ -574,11 +600,9 @@ class ServiceController extends GetxController implements GetxService {
   }
 
   Future<void> getOffersList(int offset, bool reload) async {
-    if (reload || offset == 1) {
+    if (reload && offset == 1) {
       _offerBasedServiceList = null;
-      if (offset == 1) {
-        _offerBasedServiceContent = null;
-      }
+      _offerBasedServiceContent = null;
       update();
     }
 

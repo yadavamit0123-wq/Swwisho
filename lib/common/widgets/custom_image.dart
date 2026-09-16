@@ -19,6 +19,14 @@ class CustomImage extends StatelessWidget {
     );
   }
 
+  int? _cachePx(double? logical) {
+    if (logical == null || logical <= 0 || logical.isInfinite) {
+      return null;
+    }
+    final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    return (logical * dpr).round().clamp(1, 1080);
+  }
+
   @override
   Widget build(BuildContext context) {
     final url = image ?? '';
@@ -32,16 +40,28 @@ class CustomImage extends StatelessWidget {
         height: height,
         width: width,
         fit: fit,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.low,
         errorBuilder: (_, __, ___) => _fallback(),
       );
     }
+
+    final memW = _cachePx(width);
+    final memH = width == null ? _cachePx(height) : null;
 
     return CachedNetworkImage(
       imageUrl: url,
       height: height,
       width: width,
       fit: fit,
-      fadeInDuration: const Duration(milliseconds: 120),
+      memCacheWidth: memW,
+      memCacheHeight: memH,
+      maxWidthDiskCache: memW,
+      maxHeightDiskCache: memH,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      placeholderFadeInDuration: Duration.zero,
+      useOldImageOnUrlChange: true,
       placeholder: (_, __) => _fallback(),
       errorWidget: (_, __, ___) => _fallback(),
     );

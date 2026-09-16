@@ -178,11 +178,8 @@ class ServiceInformationCard extends StatelessWidget {
                       Row(mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           ElevatedButton(
-                            onPressed: () async {
-                              await HomeScreen.ensureZoneHeader();
-                              if (!context.mounted) {
-                                return;
-                              }
+                            onPressed: () {
+                              HomeScreen.ensureZoneHeader();
                               showModalBottomSheet(
                                   context: context,
                                   useRootNavigator: true,

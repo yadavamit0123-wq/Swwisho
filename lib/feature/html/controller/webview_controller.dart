@@ -14,6 +14,9 @@ class HtmlViewController extends GetxController implements GetxService{
   PagesContent? get pagesContent => _pagesContent;
 
   Future<void> getPagesContent() async {
+    if (_pagesContent != null) {
+      return;
+    }
     Response response =await htmlRepository.getPagesContent();
     if(response.statusCode == 200){
       _pagesContent = PagesContent.fromJson(response.body['content']);

@@ -1,5 +1,6 @@
 import 'package:demandium/common/models/popup_menu_model.dart';
 import 'package:demandium/feature/booking/widget/booking_status_widget.dart';
+import 'package:demandium/feature/booking/helper/invoice_download_helper.dart';
 import 'package:get/get.dart';
 import 'package:demandium/utils/core_export.dart';
 import 'package:intl/intl.dart' as intl;
@@ -116,17 +117,10 @@ class BookingItemCard extends StatelessWidget {
                           }
 
                           else if(option.title == "download_invoice"){
-                            String uri = "";
-                            String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                            if(bookingModel.isRepeatBooking == 1){
-                              uri = "${AppConstants.baseUrl}${AppConstants.repeatBookingInvoiceUrl}${bookingModel.id}/$languageCode";
-                            }else{
-                              uri = "${AppConstants.baseUrl}${AppConstants.regularBookingInvoiceUrl}${bookingModel.id}/$languageCode";
-                            }
-                            if (kDebugMode) {
-                              print("Uri : $uri");
-                            }
-                            await _launchUrl(Uri.parse(uri));
+                            await InvoiceDownloadHelper.download(
+                              bookingId: bookingModel.id ?? "",
+                              isSubBooking: false,
+                            );
                           } else if(option.title == "cancel"){
 
                             if(!cancellationTime){
@@ -238,11 +232,5 @@ class BookingItemCard extends StatelessWidget {
         );
       }),
     );
-  }
-
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }

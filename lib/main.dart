@@ -11,6 +11,8 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterL
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PaintingBinding.instance.imageCache.maximumSize = 1000;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20;
   if(ResponsiveHelper.isMobilePhone()) {
     HttpOverrides.global = MyHttpOverrides();
     await FlutterDownloader.initialize(
@@ -163,8 +165,8 @@ class _MyAppState extends State<MyApp> {
             fallbackLocale: Locale(AppConstants.languages[0].languageCode!, AppConstants.languages[0].countryCode),
             initialRoute: GetPlatform.isWeb ? RouteHelper.getInitialRoute() : RouteHelper.getSplashRoute(widget.body, widget.route),
             getPages: RouteHelper.routes,
-            defaultTransition: Transition.fadeIn,
-            transitionDuration: const Duration(milliseconds: 160),
+            defaultTransition: Transition.cupertino,
+            transitionDuration: const Duration(milliseconds: 180),
             builder: (context, widget) => MediaQuery(
               data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
               child: Material(

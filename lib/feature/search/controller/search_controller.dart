@@ -95,9 +95,9 @@ class AllSearchController extends GetxController implements GetxService {
     }
     if(searchController.value.text.trim().isNotEmpty){
       if(Get.currentRoute.contains('/search?query=')){
-        Get.off(() => SearchResultScreen(queryText: searchController.value.text.trim()));
+        Get.offNamed(RouteHelper.getSearchResultRoute(queryText: searchController.value.text.trim()));
       }else{
-        RouteHelper.toSearchResult(queryText: searchController.value.text.trim());
+        Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.value.text.trim()));
       }
     }
   }

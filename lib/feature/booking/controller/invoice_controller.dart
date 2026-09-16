@@ -31,15 +31,15 @@ class InvoiceController {
      }
 
 
-     var invoice = Invoice(
+       var invoice = Invoice(
        provider: Provider(
-       name: bookingDetailsContent.provider != null? bookingDetailsContent.provider!.companyName! :'',
-       address: bookingDetailsContent.provider != null? bookingDetailsContent.provider!.companyAddress!: '',
-       phone: bookingDetailsContent.provider != null? bookingDetailsContent.provider!.companyPhone!: '',
+       name: bookingDetailsContent.provider?.companyName ?? '',
+       address: bookingDetailsContent.provider?.companyAddress ?? '',
+       phone: bookingDetailsContent.provider?.companyPhone ?? '',
       ),
       serviceman: ServicemanInvoice(
-        name: bookingDetailsContent.serviceman != null? "${bookingDetailsContent.serviceman!.user!.firstName!} ${bookingDetailsContent.serviceman!.user!.lastName!}":'',
-        phone: bookingDetailsContent.serviceman != null? bookingDetailsContent.serviceman!.user!.phone!: '',
+        name: "${bookingDetailsContent.serviceman?.user?.firstName ?? ''} ${bookingDetailsContent.serviceman?.user?.lastName ?? ''}".trim(),
+        phone: bookingDetailsContent.serviceman?.user?.phone ?? '',
       ),
       info: InvoiceInfo(
         date: bookingDetailsContent.serviceSchedule,
@@ -69,13 +69,20 @@ class InvoiceController {
     return pdf.save();
   }
 
-  static Widget invoiceIDSchedule(String invoiceID, String? invoiceSchedule) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text("Invoice # $invoiceID",style: pw.TextStyle(fontWeight: FontWeight.bold)),
-      Text("Service Schedule : ${DateConverter.dateMonthYearTimeTwentyFourFormat(DateTime.tryParse(invoiceSchedule ??"")!)}"),
-    ]
-  );
+  static Widget invoiceIDSchedule(String invoiceID, String? invoiceSchedule) {
+    String schedule = invoiceSchedule ?? '';
+    final parsed = DateTime.tryParse(invoiceSchedule ?? '');
+    if (parsed != null) {
+      schedule = DateConverter.dateMonthYearTimeTwentyFourFormat(parsed);
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text("Invoice # $invoiceID",style: pw.TextStyle(fontWeight: FontWeight.bold)),
+        Text("Service Schedule : $schedule"),
+      ]
+    );
+  }
 
   static Widget buildHeader(Invoice invoice,BookingDetailsContent content) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +94,7 @@ class InvoiceController {
         children: [
           serviceAddress(
             name: "${content.customer?.firstName ?? ""} ${content.customer?.lastName ?? ""}",
-            address: content.serviceAddress!.address?.replaceAll("null","") ?? "",
+            address: content.serviceAddress?.address?.replaceAll("null","") ?? "",
             email: content.customer?.email??"",
             phone: content.customer?.phone ?? "",
           ),
@@ -252,7 +259,7 @@ class InvoiceController {
       String paymentStatus) {
     double serviceDiscount = 0;
     bookingDetailsContent.bookingDetails?.forEach((service) {
-      serviceDiscount = serviceDiscount + service.discountAmount!;
+      serviceDiscount = serviceDiscount + (service.discountAmount ?? 0);
     });
 
     double paidAmount = 0;
@@ -326,7 +333,7 @@ class InvoiceController {
 
                 buildText(
                   title: 'Tax',
-                  value: "(+) ${bookingDetailsContent.totalTaxAmount!.toStringAsFixed(2)}",
+                  value: "(+) ${(bookingDetailsContent.totalTaxAmount ?? 0).toStringAsFixed(2)}",
                   unite: true,
                 ),
 
@@ -339,7 +346,7 @@ class InvoiceController {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
-                    value: double.tryParse(controller.bookingDetailsContent!.totalBookingAmount.toString())!.toStringAsFixed(2),
+                    value: (controller.bookingDetailsContent?.totalBookingAmount ?? bookingDetailsContent.totalBookingAmount ?? 0).toStringAsFixed(2),
                     unite: true,
                   ),
                   ListView.builder(itemBuilder: (context, index){
@@ -381,7 +388,7 @@ class InvoiceController {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
-                    value: controller.bookingDetailsContent!.totalBookingAmount!.toStringAsFixed(2),
+                    value: (controller.bookingDetailsContent?.totalBookingAmount ?? bookingDetailsContent.totalBookingAmount ?? 0).toStringAsFixed(2),
                     unite: true,
                   ),
                   if(bookingDetailsContent.additionalCharge != null && bookingDetailsContent.additionalCharge! > 0 && bookingDetailsContent.paymentMethod != "cash_after_service")

@@ -64,8 +64,14 @@ class ServiceAreaController extends GetxController implements GetxService{
   List<ZoneModel> _parseZoneList(dynamic data) {
     final zones = <ZoneModel>[];
     for (final item in _extractMaps(data)) {
+      if (item.containsKey('label') && item.containsKey('active') && item['id'] == null && item['name'] == null) {
+        continue;
+      }
       try {
-        zones.add(ZoneModel.fromJson(item));
+        final zone = ZoneModel.fromJson(item);
+        if ((zone.id != null && zone.id!.isNotEmpty) || (zone.name != null && zone.name!.isNotEmpty)) {
+          zones.add(zone);
+        }
       } catch (_) {}
     }
     return zones;
@@ -128,7 +134,7 @@ class ServiceAreaController extends GetxController implements GetxService{
 
     if (_zoneList == null || _zoneList!.isEmpty) {
       try {
-        Response response = await serviceAreaRepo.apiClient.postData(AppConstants.getZoneListApi, {});
+        Response response = await serviceAreaRepo.apiClient.getData(AppConstants.getZonesApi);
         var parsed = _parseZoneList(response.body);
         if (parsed.isEmpty) {
           parsed = _parseZoneList(response.bodyString);
@@ -140,8 +146,10 @@ class ServiceAreaController extends GetxController implements GetxService{
             parsed = _parseZoneList(response.bodyString);
           }
         }
-        _zoneList = parsed;
-        _polygone = _buildPolygons(_zoneList ?? []);
+        if (parsed.isNotEmpty) {
+          _zoneList = parsed;
+          _polygone = _buildPolygons(_zoneList ?? []);
+        }
       } catch (_) {}
     }
 

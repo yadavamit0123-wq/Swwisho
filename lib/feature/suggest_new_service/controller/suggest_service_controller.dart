@@ -73,32 +73,40 @@ class SuggestServiceController extends GetxController{
   Future<void> submitNewServiceRequest() async {
     _isLoading = true;
     update();
-
-    Map<String,String> body={
-      "category_id":selectedCategoryId,
-      "service_name": serviceNameController.text,
-      "service_description": serviceDetailsController.text
-    };
-    Response response = await suggestServiceRepo.submitNewServiceRequest(body);
-    if(response.statusCode == 200){
-      clearData();
-      customSnackBar("service_request_placed_successfully_to_admin".tr,type : ToasterMessageType.success);
-    }
-    else {
-      ApiChecker.checkApi(response);
-    }
+    try {
+      Map<String,String> body={
+        "category_id":selectedCategoryId,
+        "service_name": serviceNameController.text,
+        "service_description": serviceDetailsController.text
+      };
+      Response response = await suggestServiceRepo.submitNewServiceRequest(body);
+      if(response.statusCode == 200){
+        clearData();
+        resetRequestView();
+        customSnackBar("service_request_placed_successfully_to_admin".tr,type : ToasterMessageType.success);
+      }
+      else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {}
     _isLoading = false;
     update();
   }
 
   void updateShowInputField(){
     _isShowInputField = true;
+    initialButtonPadding = 570;
+    initialImageSize = 70;
+    initialContainerOpacity = 1.0;
     update();
-    if(_isShowInputField){
-      initialButtonPadding = 570;
-      initialImageSize = 70;
-      initialContainerOpacity = 1.0;
-    }
+  }
+
+  void resetRequestView(){
+    _isShowInputField = false;
+    _isLoading = false;
+    initialButtonPadding = 230;
+    initialContainerOpacity = 0.0;
+    initialImageSize = 100.0;
     update();
   }
   void setIdentityType(CategoryModel? category){

@@ -53,7 +53,7 @@ class RealTimeSearchSuggestion extends StatelessWidget {
                 Get.back();
                 FocusScope.of(context).unfocus();
                 searchController.populatedSearchController(suggestionList[index].name!);
-                RouteHelper.toSearchResult(queryText: suggestionList[index].name!);
+                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: suggestionList[index].name!));
               },
             );
 
@@ -73,7 +73,7 @@ class RealTimeSearchSuggestion extends StatelessWidget {
                 Get.back();
                 FocusScope.of(context).unfocus();
                 searchController.populatedSearchController(suggestionList[index].name!);
-                RouteHelper.toSearchResult(queryText: suggestionList[index].name!);
+                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: suggestionList[index].name!));
               },
             );
           }

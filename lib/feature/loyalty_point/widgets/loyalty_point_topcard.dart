@@ -18,7 +18,11 @@ class LoyaltyPointTopCard extends StatelessWidget {
         child: Stack(alignment: AlignmentDirectional.bottomEnd,children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
-            child: Image.asset(Images.loyaltyPointBackground,height: Dimensions.walletTopCardHeight*0.6,),
+            child: Image.asset(
+              Images.loyaltyPointBackground,
+              height: Dimensions.walletTopCardHeight*0.6,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
           ),
           Padding(padding: const EdgeInsets.all(Dimensions.paddingSizeLarge),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
@@ -26,7 +30,11 @@ class LoyaltyPointTopCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset(Images.myPoint,width:30),
+                  Image.asset(
+                    Images.myPoint,
+                    width:30,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.stars, color: Colors.white, size: 30),
+                  ),
                   const SizedBox(),
                   if(ResponsiveHelper.isDesktop(context))
                   InkWell(

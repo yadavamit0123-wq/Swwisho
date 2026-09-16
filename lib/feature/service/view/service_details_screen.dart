@@ -22,13 +22,11 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
 
   Future<void> _loadDetails() async {
     try {
-      await HomeScreen.ensureZoneHeader();
-    } catch (_) {}
-    try {
       if (!Get.isRegistered<ServiceTabController>()) {
         Get.put(ServiceTabController(serviceDetailsRepo: Get.find()));
       }
     } catch (_) {}
+    HomeScreen.ensureZoneHeader();
     final serviceId = widget.serviceID;
     if (serviceId != null && serviceId.isNotEmpty) {
       Get.find<ServiceDetailsController>().getServiceDetails(
@@ -50,7 +48,7 @@ class _ServiceDetailsScreenState extends State<ServiceDetailsScreen> {
       body: GetBuilder<ServiceDetailsController>(
         builder: (serviceController) {
           if(serviceController.service != null || widget.serviceID == null){
-            if(serviceController.service != null && serviceController.service!.id != null &&  widget.serviceID != null){
+            if(serviceController.service != null && serviceController.service!.id != null &&  widget.serviceID != null && serviceController.service!.id == widget.serviceID){
               Service service = serviceController.service!;
               Discount discount;
               try {

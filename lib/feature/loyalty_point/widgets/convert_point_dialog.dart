@@ -98,7 +98,7 @@ class ConvertLoyaltyPointDialog extends StatelessWidget {
                         const Padding(padding: EdgeInsets.only(left: Dimensions.paddingSizeSmall, right: Dimensions.paddingSizeSmall,top: 5),
                           child: Icon(Icons.circle,size: 7,),
                         ),
-                        Expanded(child: Text(item,style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodySmall!.color),)),
+                        Expanded(child: Text(item,style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),)),
                       ]),
                       const SizedBox(height: Dimensions.paddingSizeSmall,),
                     ],)).toList(),

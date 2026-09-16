@@ -13,6 +13,7 @@ class CategorySubCategoryScreen extends StatefulWidget {
 }
 
 class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
+  static final Map<String, List<CategoryModel>> _subCategoryCache = {};
   bool _loading = true;
   String? _error;
   String _selectedCategoryId = '';
@@ -23,7 +24,24 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
   void initState() {
     super.initState();
     _selectedCategoryId = widget.categoryID;
+    _hydrateFromCache();
     _load();
+  }
+
+  void _hydrateFromCache() {
+    try {
+      final cached = Get.find<CategoryController>().categoryList;
+      if (cached != null && cached.isNotEmpty) {
+        _categories = List<CategoryModel>.from(cached);
+      }
+    } catch (_) {}
+    final cachedSubs = _subCategoryCache[_selectedCategoryId];
+    if (cachedSubs != null) {
+      _subCategories = List<CategoryModel>.from(cachedSubs);
+      _loading = false;
+    } else {
+      _loading = _categories.isEmpty;
+    }
   }
 
   List<Map<String, dynamic>> _extractList(dynamic data) {
@@ -53,13 +71,15 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
   }
 
   Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_categories.isEmpty) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     try {
-      await HomeScreen.ensureZoneHeader();
+      HomeScreen.ensureZoneHeader();
       final api = Get.find<ApiClient>();
       final categoryResponse = await api.getData('${AppConstants.categoryUrl}&limit=100&offset=1');
       final categories = <CategoryModel>[];
@@ -86,6 +106,9 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
           _error = 'Categories load nahi ho paayi. Pull to refresh karke try karein.';
         }
       });
+      if (_selectedCategoryId.isNotEmpty) {
+        _subCategoryCache[_selectedCategoryId] = List<CategoryModel>.from(subCategories);
+      }
 
       try {
         Get.find<CategoryController>().seedCategoryList(categories);
@@ -127,12 +150,22 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
     if (id == null || id.isEmpty || id == _selectedCategoryId) {
       return;
     }
+    final cachedSubs = _subCategoryCache[id];
     setState(() {
       _selectedCategoryId = id;
-      _loading = true;
+      if (cachedSubs != null) {
+        _subCategories = List<CategoryModel>.from(cachedSubs);
+        _loading = false;
+      } else {
+        _loading = true;
+      }
     });
     final subCategories = await _fetchSubCategories(id);
     if (!mounted) {
+      return;
+    }
+    _subCategoryCache[id] = List<CategoryModel>.from(subCategories);
+    if (_selectedCategoryId != id) {
       return;
     }
     setState(() {
@@ -324,12 +357,18 @@ class _SubCategoryServicesScreen extends StatefulWidget {
 }
 
 class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> {
+  static final Map<String, List<Service>> _serviceCache = {};
   bool _loading = true;
   List<Service> _services = [];
 
   @override
   void initState() {
     super.initState();
+    final cached = _serviceCache[widget.subCategory.id ?? ''];
+    if (cached != null) {
+      _services = List<Service>.from(cached);
+      _loading = false;
+    }
     _load();
   }
 
@@ -361,7 +400,7 @@ class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> 
 
   Future<void> _load() async {
     try {
-      await HomeScreen.ensureZoneHeader();
+      HomeScreen.ensureZoneHeader();
       final id = widget.subCategory.id ?? '';
       final response = await Get.find<ApiClient>().getData('${AppConstants.serviceBasedOnSubCategory}$id?limit=50&offset=1');
       final services = <Service>[];
@@ -373,6 +412,7 @@ class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> 
       if (!mounted) {
         return;
       }
+      _serviceCache[id] = List<Service>.from(services);
       setState(() {
         _services = services;
         _loading = false;

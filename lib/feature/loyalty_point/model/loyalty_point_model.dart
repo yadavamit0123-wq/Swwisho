@@ -3,7 +3,11 @@ class LoyaltyPointModel {
   LoyaltyPointModel({this.content});
 
   LoyaltyPointModel.fromJson(Map<String, dynamic> json) {
-    content = json['content'] != null ? LoyaltyPointContent.fromJson(json['content']) : null;
+    if (json['content'] is Map) {
+      try {
+        content = LoyaltyPointContent.fromJson(Map<String, dynamic>.from(json['content']));
+      } catch (_) {}
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -28,13 +32,15 @@ class LoyaltyPointContent {
         this.transactions});
 
   LoyaltyPointContent.fromJson(Map<String, dynamic> json) {
-    loyaltyPoint = double.tryParse(json['loyalty_point'].toString());
+    loyaltyPoint = double.tryParse(json['loyalty_point']?.toString() ?? '');
     loyaltyPointValuePerCurrencyUnit =
-    json['loyalty_point_value_per_currency_unit'];
-    minLoyaltyPointToTransfer = json['min_loyalty_point_to_transfer'];
-    transactions = json['transactions'] != null
-        ? Transactions.fromJson(json['transactions'])
-        : null;
+    json['loyalty_point_value_per_currency_unit']?.toString();
+    minLoyaltyPointToTransfer = json['min_loyalty_point_to_transfer']?.toString();
+    if (json['transactions'] is Map) {
+      try {
+        transactions = Transactions.fromJson(Map<String, dynamic>.from(json['transactions']));
+      } catch (_) {}
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -62,14 +68,18 @@ class Transactions {
         this.total});
 
   Transactions.fromJson(Map<String, dynamic> json) {
-    currentPage = json['current_page'];
-    if (json['data'] != null) {
+    currentPage = int.tryParse(json['current_page']?.toString() ?? '');
+    if (json['data'] is List) {
       data = <LoyaltyPointTransactionData>[];
-      json['data'].forEach((v) {
-        data!.add(LoyaltyPointTransactionData.fromJson(v));
-      });
+      for (final v in json['data']) {
+        try {
+          if (v is Map) {
+            data!.add(LoyaltyPointTransactionData.fromJson(Map<String, dynamic>.from(v)));
+          }
+        } catch (_) {}
+      }
     }
-    total = json['total'];
+    total = int.tryParse(json['total']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -112,21 +122,26 @@ class LoyaltyPointTransactionData {
         this.toUser});
 
   LoyaltyPointTransactionData.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    trxType = json['trx_type'];
-    debit = double.tryParse(json['debit'].toString());
-    credit = double.tryParse(json['credit'].toString());
-    balance = double.tryParse(json['balance'].toString());
-    fromUserId = json['from_user_id'];
-    toUserId = json['to_user_id'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    toUserAccount = json['to_user_account'];
-    fromUser = json['from_user'] != null
-        ? FromUser.fromJson(json['from_user'])
-        : null;
-    toUser =
-    json['to_user'] != null ? FromUser.fromJson(json['to_user']) : null;
+    id = json['id']?.toString();
+    trxType = json['trx_type']?.toString();
+    debit = double.tryParse(json['debit']?.toString() ?? '');
+    credit = double.tryParse(json['credit']?.toString() ?? '');
+    balance = double.tryParse(json['balance']?.toString() ?? '');
+    fromUserId = json['from_user_id']?.toString();
+    toUserId = json['to_user_id']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    toUserAccount = json['to_user_account']?.toString();
+    if (json['from_user'] is Map) {
+      try {
+        fromUser = FromUser.fromJson(Map<String, dynamic>.from(json['from_user']));
+      } catch (_) {}
+    }
+    if (json['to_user'] is Map) {
+      try {
+        toUser = FromUser.fromJson(Map<String, dynamic>.from(json['to_user']));
+      } catch (_) {}
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -194,23 +209,23 @@ class FromUser {
       });
 
   FromUser.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    firstName = json['first_name'];
-    lastName = json['last_name'];
-    email = json['email'];
-    phone = json['phone'];
-    identificationType = json['identification_type'];
-    gender = json['gender'];
-    profileImage = json['profile_image'];
-    fcmToken = json['fcm_token'];
-    isPhoneVerified = json['is_phone_verified'];
-    isEmailVerified = json['is_email_verified'];
-    isActive = json['is_active'];
-    userType = json['user_type'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    walletBalance = double.tryParse(json['wallet_balance'].toString());
-    loyaltyPoint = double.tryParse(json['loyalty_point'].toString());
+    id = json['id']?.toString();
+    firstName = json['first_name']?.toString();
+    lastName = json['last_name']?.toString();
+    email = json['email']?.toString();
+    phone = json['phone']?.toString();
+    identificationType = json['identification_type']?.toString();
+    gender = json['gender']?.toString();
+    profileImage = json['profile_image']?.toString();
+    fcmToken = json['fcm_token']?.toString();
+    isPhoneVerified = int.tryParse(json['is_phone_verified']?.toString() ?? '');
+    isEmailVerified = int.tryParse(json['is_email_verified']?.toString() ?? '');
+    isActive = int.tryParse(json['is_active']?.toString() ?? '');
+    userType = json['user_type']?.toString();
+    createdAt = json['created_at']?.toString();
+    updatedAt = json['updated_at']?.toString();
+    walletBalance = double.tryParse(json['wallet_balance']?.toString() ?? '');
+    loyaltyPoint = double.tryParse(json['loyalty_point']?.toString() ?? '');
   }
 
   Map<String, dynamic> toJson() {

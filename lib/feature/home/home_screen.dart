@@ -8,6 +8,7 @@ import '../../utils/appp_upgrade_wrapper.dart';
 
 class HomeScreen extends StatefulWidget {
   static const String _mumbaiZoneId = 'a0eac7ed-41da-41fa-a119-e9369bba2c99';
+  static String? _lastZoneId;
 
   static Future<void> _safeLoad(Future<void> Function() task) async {
     try {
@@ -32,7 +33,7 @@ class HomeScreen extends StatefulWidget {
       address = Get.find<LocationController>().getUserAddress();
     } catch (_) {}
 
-    String? zoneId = _cleanZoneId(address?.zoneId);
+    String? zoneId = _cleanZoneId(address?.zoneId) ?? _lastZoneId;
 
     if (zoneId == null) {
       try {
@@ -74,6 +75,10 @@ class HomeScreen extends StatefulWidget {
       zoneId = _mumbaiZoneId;
     }
 
+    if (zoneId != null) {
+      _lastZoneId = zoneId;
+    }
+
     try {
       final prefs = Get.find<SharedPreferences>();
       Get.find<ApiClient>().updateHeader(
@@ -106,6 +111,14 @@ class HomeScreen extends StatefulWidget {
       if (Get.find<AuthController>().isLoggedIn()) _safeLoad(() => Get.find<AuthController>().updateToken()),
       if (Get.find<AuthController>().isLoggedIn()) _safeLoad(() => Get.find<ServiceController>().getRecentlyViewedServiceList(1, reload)),
     ]);
+    try {
+      if (Get.find<ServiceController>().offerBasedServiceList == null) {
+        _safeLoad(() => Get.find<ServiceController>().getOffersList(1, false));
+      }
+    } catch (_) {
+      _safeLoad(() => Get.find<ServiceController>().getOffersList(1, false));
+    }
+    _safeLoad(() => Get.find<HtmlViewController>().getPagesContent());
     try {
       Get.find<BookingDetailsController>().manageDialog();
     } catch (_) {}

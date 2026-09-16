@@ -1,4 +1,5 @@
 import 'package:demandium/common/models/popup_menu_model.dart';
+import 'package:demandium/feature/booking/helper/invoice_download_helper.dart';
 import 'package:demandium/feature/booking/widget/repeat/repeat_booking_details_widget.dart';
 import 'package:demandium/feature/booking/widget/repeat/repeat_booking_service_log_widget.dart';
 import 'package:get/get.dart';
@@ -81,12 +82,10 @@ class _RepeatBookingDetailsScreenState extends State<RepeatBookingDetailsScreen>
                     ),
                     onTap: () async {
                       if(option.title == "download_invoice"){
-                        String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                        String uri = "${AppConstants.baseUrl}${AppConstants.repeatBookingInvoiceUrl}${bookingDetailsController.bookingDetailsContent?.id}/$languageCode";
-                        if (kDebugMode) {
-                          print("Uri : $uri");
-                        }
-                        await _launchUrl(Uri.parse(uri));
+                        await InvoiceDownloadHelper.download(
+                          bookingId: bookingDetailsController.bookingDetailsContent?.id ?? "",
+                          content: bookingDetailsController.bookingDetailsContent,
+                        );
                       }else if(option.title == "cancel"){
                         Get.dialog(
                             ConfirmationDialog(
@@ -131,12 +130,10 @@ class _RepeatBookingDetailsScreenState extends State<RepeatBookingDetailsScreen>
               ),
             ) : IconButton(
                 onPressed: () async {
-                  String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                  String uri = "${AppConstants.baseUrl}${AppConstants.repeatBookingInvoiceUrl}${bookingDetailsController.bookingDetailsContent?.id}/$languageCode";
-                  if (kDebugMode) {
-                    print("Uri : $uri");
-                  }
-                  await _launchUrl(Uri.parse(uri));
+                  await InvoiceDownloadHelper.download(
+                    bookingId: bookingDetailsController.bookingDetailsContent?.id ?? "",
+                    content: bookingDetailsController.bookingDetailsContent,
+                  );
                 },
                 icon: const Icon(Icons.file_download_outlined));
           }),
@@ -153,11 +150,6 @@ class _RepeatBookingDetailsScreenState extends State<RepeatBookingDetailsScreen>
         ),
       ),
     );
-  }
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }
 
@@ -211,15 +203,10 @@ class RepeatBookingTabBar extends StatelessWidget {
                   Padding(padding: const EdgeInsets.all(6.0),
                     child: InkWell(
                       onTap : () async {
-                        Get.dialog(const CustomLoader());
-                        String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                        String uri = "${AppConstants.baseUrl}${
-                            AppConstants.repeatBookingInvoiceUrl}${bookingDetails.id}/$languageCode";
-                        if (kDebugMode) {
-                          print("Uri : $uri");
-                        }
-                        await _launchUrl(Uri.parse(uri));
-                        Get.back();
+                        await InvoiceDownloadHelper.download(
+                          bookingId: bookingDetails.id ?? "",
+                          content: bookingDetails,
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeEight),
@@ -324,11 +311,5 @@ class RepeatBookingTabBar extends StatelessWidget {
         ),
       );
     });
-  }
-
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }

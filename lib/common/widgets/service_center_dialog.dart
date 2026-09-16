@@ -32,12 +32,18 @@ class _ServiceCenterDialogState extends State<ServiceCenterDialog> {
   void initState() {
     super.initState();
     _service = widget.service;
+    if (widget.service != null) {
+      _loading = false;
+      try {
+        Get.find<CartController>().setInitialCartList(widget.service!);
+      } catch (_) {}
+    }
     _prepare();
   }
 
   Future<void> _prepare() async {
     try {
-      await HomeScreen.ensureZoneHeader();
+      HomeScreen.ensureZoneHeader();
       final serviceId = widget.service?.id;
       if (serviceId != null && serviceId.isNotEmpty) {
         try {
@@ -102,7 +108,7 @@ class _ServiceCenterDialogState extends State<ServiceCenterDialog> {
             final service = _service ?? widget.service;
             final variants = cartController.initialCartList;
 
-            if (_loading) {
+            if (_loading && (service == null || variants.isEmpty)) {
               return const SizedBox(
                 height: 180,
                 child: Center(child: CircularProgressIndicator(strokeWidth: 2)),

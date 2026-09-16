@@ -1,4 +1,5 @@
 import 'package:demandium/common/models/popup_menu_model.dart';
+import 'package:demandium/feature/booking/helper/invoice_download_helper.dart';
 import 'package:demandium/feature/booking/view/repeat_booking_details_screen.dart';
 import 'package:demandium/feature/booking/view/web_booking_details_screen.dart';
 import 'package:demandium/feature/booking/widget/booking_screen_shimmer.dart';
@@ -144,14 +145,10 @@ class _ServiceLogItem extends StatelessWidget {
                                       Get.toNamed(RouteHelper.getBookingDetailsScreen(subBookingId : serviceList[index]!.id!,));
                                     }
                                     else if(option.title == "download_invoice"){
-                                      String uri = "";
-                                      String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                                      uri = "${AppConstants.baseUrl}${AppConstants.singleRepeatBookingInvoiceUrl}${serviceList[index]!.id!}/$languageCode";
-
-                                      if (kDebugMode) {
-                                        print("Uri : $uri");
-                                      }
-                                      await _launchUrl(Uri.parse(uri));
+                                      await InvoiceDownloadHelper.download(
+                                        bookingId: serviceList[index]?.id ?? "",
+                                        isSubBooking: true,
+                                      );
                                     } else if(option.title == "cancel"){
                                       Get.dialog(
                                         ConfirmationDialog(
@@ -243,11 +240,6 @@ class _ServiceLogItem extends StatelessWidget {
         ),
       );
     });
-  }
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }
 

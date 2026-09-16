@@ -49,7 +49,9 @@ class LoyaltyPointScreen extends StatelessWidget {
         ,bgColor: Theme.of(context).cardColor,),
       body: GetBuilder<LoyaltyPointController>(
         initState: (_){
-          Get.find<LoyaltyPointController>().getLoyaltyPointData(1);
+          try {
+            Get.find<LoyaltyPointController>().getLoyaltyPointData(1);
+          } catch (_) {}
         },
         builder: (loyaltyPointController){
 

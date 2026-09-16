@@ -55,6 +55,7 @@ class AppConstants {
   static const String removeFavoriteService = '/api/v1/customer/service/favorite/remove';
   static const String removeFavoriteProvider = '/api/v1/customer/provider/favorite/remove';
   static const String getZoneListApi = '/api/v1/customer/zone/list';
+  static const String getZonesApi = '/api/v1/zones?limit=100&offset=1';
   static const String registerUri = '/api/v1/customer/auth/registration';
   static const String loginUri = '/api/v1/customer/auth/login';
   static const String loginOut = '/api/v1/customer/auth/logout';

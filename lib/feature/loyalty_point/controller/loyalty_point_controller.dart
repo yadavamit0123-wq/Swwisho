@@ -18,16 +18,18 @@ class LoyaltyPointController extends GetxController implements GetxService{
   Future<void> convertLoyaltyPoint() async {
     _isLoading = true;
     update();
-    Response response = await loyaltyPointRepo.convertLoyaltyPoint(loyaltyPointController.text);
-    if(response.statusCode == 200){
-      loyaltyPointController.text='';
-     await getLoyaltyPointData(1);
-      Get.back();
-      customSnackBar("point_converted_to_wallet_money".tr,type : ToasterMessageType.success);
-    }
-    else {
-      ApiChecker.checkApi(response);
-    }
+    try {
+      Response response = await loyaltyPointRepo.convertLoyaltyPoint(loyaltyPointController.text);
+      if(response.statusCode == 200){
+        loyaltyPointController.text='';
+        await getLoyaltyPointData(1);
+        Get.back();
+        customSnackBar("point_converted_to_wallet_money".tr,type : ToasterMessageType.success);
+      }
+      else {
+        ApiChecker.checkApi(response);
+      }
+    } catch (_) {}
     _isLoading = false;
     update();
   }
@@ -39,19 +41,37 @@ class LoyaltyPointController extends GetxController implements GetxService{
       update();
     }
     loyaltyPointController.text='';
-    Response response = await loyaltyPointRepo.getLoyaltyPointData(offset);
-    if(response.statusCode == 200){
-      loyaltyPointModel = LoyaltyPointModel.fromJson(response.body);
+    try {
+      Response response = await loyaltyPointRepo.getLoyaltyPointData(offset);
+      if(response.statusCode == 200 && response.body is Map){
+        loyaltyPointModel = LoyaltyPointModel.fromJson(Map<String, dynamic>.from(response.body));
 
-      if(offset!=1){
-        listOfTransaction.addAll(loyaltyPointModel!.content!.transactions!.data!);
-      }else{
-        listOfTransaction = [];
-        listOfTransaction.addAll(loyaltyPointModel!.content!.transactions!.data!);
+        final items = loyaltyPointModel?.content?.transactions?.data ?? [];
+        if(offset!=1){
+          listOfTransaction.addAll(items);
+        }else{
+          listOfTransaction = [];
+          listOfTransaction.addAll(items);
+        }
       }
-    }
-    else {
-      ApiChecker.checkApi(response);
+      else {
+        if (offset == 1) {
+          loyaltyPointModel ??= LoyaltyPointModel(
+            content: LoyaltyPointContent(loyaltyPoint: 0),
+          );
+          listOfTransaction = [];
+        }
+        if(response.statusCode != 200){
+          ApiChecker.checkApi(response);
+        }
+      }
+    } catch (_) {
+      if (offset == 1) {
+        loyaltyPointModel ??= LoyaltyPointModel(
+          content: LoyaltyPointContent(loyaltyPoint: 0),
+        );
+        listOfTransaction = [];
+      }
     }
     update();
   }

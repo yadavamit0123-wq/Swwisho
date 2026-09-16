@@ -5,6 +5,20 @@ class LoyaltyPointItemView extends StatelessWidget {
   final LoyaltyPointTransactionData transactionData;
   const  LoyaltyPointItemView({super.key, required this.transactionData}) ;
 
+  String _formattedDate() {
+    final createdAt = transactionData.createdAt;
+    if (createdAt == null || createdAt.isEmpty) {
+      return '';
+    }
+    try {
+      return DateConverter.dateMonthYearTimeTwentyFourFormat(
+        DateConverter.isoUtcStringToLocalDate(createdAt),
+      );
+    } catch (_) {
+      return createdAt;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isCredit;
@@ -14,6 +28,8 @@ class LoyaltyPointItemView extends StatelessWidget {
     }else{
       isCredit = false;
     }
+
+    final textColor = (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black);
 
     return Column(children: [
 
@@ -25,23 +41,23 @@ class LoyaltyPointItemView extends StatelessWidget {
               Text('XID  '.tr,
                 overflow: TextOverflow.ellipsis,
                 style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault,
-                  color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.8),
+                  color: textColor.withValues(alpha: 0.8),
                 ),
               ),
 
               SizedBox(
                 width: ResponsiveHelper.isDesktop(context)?Get.width*0.20:Get.width*0.5,
-                child: Text('${transactionData.id}',
+                child: Text('${transactionData.id ?? ''}',
                   overflow: TextOverflow.ellipsis,
                   style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeDefault,
-                    color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.8),
+                    color: textColor.withValues(alpha: 0.8),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        Text(DateConverter.dateMonthYearTimeTwentyFourFormat(DateConverter.isoUtcStringToLocalDate(transactionData.createdAt!)),
+        Text(_formattedDate(),
           textDirection: TextDirection.ltr,
           style: robotoRegular.copyWith(fontSize: Dimensions.fontSizeDefault,color: Theme.of(context).secondaryHeaderColor),
         )
@@ -57,15 +73,15 @@ class LoyaltyPointItemView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge,vertical: Dimensions.paddingSizeDefault),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,children: [
                 Text(isCredit?"earned_from_booking".tr:"converted_wallet_money".tr,
-                  style: robotoRegular.copyWith(color: Theme.of(context).textTheme.bodyLarge!.color!.withValues(alpha: 0.5)),),
+                  style: robotoRegular.copyWith(color: textColor.withValues(alpha: 0.5)),),
 
 
                 Row(children: [
                   Directionality(
                     textDirection: TextDirection.ltr,
-                    child: Text(transactionData.debit!=0?"- ${transactionData.debit}":"+ ${transactionData.credit}",
+                    child: Text((transactionData.debit??0)!=0?"- ${transactionData.debit}":"+ ${transactionData.credit ?? 0}",
                       style: robotoBold.copyWith(fontSize: Dimensions.fontSizeLarge,
-                        color:transactionData.debit!=0?Theme.of(context).colorScheme.error :Colors.green,
+                        color:(transactionData.debit??0)!=0?Theme.of(context).colorScheme.error :Colors.green,
                       ),
                     ),
                   ),

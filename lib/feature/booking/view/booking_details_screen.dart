@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:demandium/common/models/popup_menu_model.dart';
+import 'package:demandium/feature/booking/helper/invoice_download_helper.dart';
 import 'package:demandium/feature/booking/view/web_booking_details_screen.dart';
 import 'package:demandium/feature/checkout/model/payment_response_model.dart';
 import 'package:get/get.dart';
@@ -138,13 +139,11 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> with Single
                       ),
                       onTap: () async {
                         if(option.title == "download_invoice"){
-                          String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                          String uri = "${AppConstants.baseUrl}${
-                              isSubBooking ? AppConstants.singleRepeatBookingInvoiceUrl : AppConstants.regularBookingInvoiceUrl}${bookingDetailsContent.id}/$languageCode";
-                          if (kDebugMode) {
-                            print("Uri : $uri");
-                          }
-                          await _launchUrl(Uri.parse(uri));
+                          await InvoiceDownloadHelper.download(
+                            bookingId: bookingDetailsContent.id ?? "",
+                            isSubBooking: isSubBooking,
+                            content: bookingDetailsContent,
+                          );
                         }else if(option.title == "cancel"){
                           Get.dialog(
                             ConfirmationDialog(
@@ -185,13 +184,11 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> with Single
                 ),
               ) : IconButton(
                 onPressed: () async {
-                  String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                  String uri = "${AppConstants.baseUrl}${
-                  isSubBooking ? AppConstants.singleRepeatBookingInvoiceUrl : AppConstants.regularBookingInvoiceUrl }${bookingDetailsContent.id}/$languageCode";
-                  if (kDebugMode) {
-                    print("Uri : $uri");
-                  }
-                  await _launchUrl(Uri.parse(uri));
+                  await InvoiceDownloadHelper.download(
+                    bookingId: bookingDetailsContent.id ?? "",
+                    isSubBooking: isSubBooking,
+                    content: bookingDetailsContent,
+                  );
                 },
                 icon: const Icon(Icons.file_download_outlined),
               );
@@ -218,11 +215,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> with Single
         ),
       ),
     );
-  }
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }
 
@@ -276,13 +268,11 @@ class BookingTabBar extends StatelessWidget {
                   Padding(padding: const EdgeInsets.all(6.0),
                     child: InkWell(
                       onTap : () async {
-                        String languageCode = Get.find<LocalizationController>().locale.languageCode;
-                        String uri = "${AppConstants.baseUrl}${
-                            isSubBooking ? AppConstants.singleRepeatBookingInvoiceUrl : AppConstants.regularBookingInvoiceUrl}${bookingDetailsContent.id}/$languageCode";
-                        if (kDebugMode) {
-                          print("Uri : $uri");
-                        }
-                        await _launchUrl(Uri.parse(uri));
+                        await InvoiceDownloadHelper.download(
+                          bookingId: bookingDetailsContent.id ?? "",
+                          isSubBooking: isSubBooking,
+                          content: bookingDetailsContent,
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall, vertical: Dimensions.paddingSizeEight),
@@ -387,11 +377,5 @@ class BookingTabBar extends StatelessWidget {
         ),
       );
     });
-  }
-
-  Future<void> _launchUrl(Uri url) async {
-    if (!await launchUrl(url)) {
-      throw 'Could not launch $url';
-    }
   }
 }

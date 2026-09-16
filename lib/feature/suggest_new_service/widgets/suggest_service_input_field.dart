@@ -45,14 +45,17 @@ class _SuggestServiceInputFieldState extends State<SuggestServiceInputField> {
                   icon: const Padding(padding: EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeLarge),
                     child: Icon(Icons.keyboard_arrow_down),
                   ),
-                  items: categoryController.categoryList?.map((CategoryModel items) {
+                  items: (categoryController.categoryList ?? []).map((CategoryModel items) {
                     return DropdownMenuItem(
                       value: items,
                       child: Row(
                         children: [
-                          Text(items.name ?? "",
-                            style: robotoRegular.copyWith(
-                              color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.8),
+                          Flexible(
+                            child: Text(items.name ?? "",
+                              overflow: TextOverflow.ellipsis,
+                              style: robotoRegular.copyWith(
+                                color: (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black).withValues(alpha: 0.8),
+                              ),
                             ),
                           ),
                         ],

@@ -13,17 +13,17 @@ class LoyaltyPointListView extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault,vertical: Dimensions.paddingSizeSmall),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start,children: [
           Text('point_history'.tr,style: robotoMedium.copyWith(fontSize: Dimensions.fontSizeExtraLarge,
-              color: Theme.of(context).textTheme.bodyLarge!.color),
+              color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
           const SizedBox(height: Dimensions.paddingSizeLarge,),
           listOfTransaction.isNotEmpty?
           PaginatedListView(
             scrollController: scrollController,
-            totalSize: loyaltyPointController.loyaltyPointModel!.content!.transactions!.total!,
+            totalSize: loyaltyPointController.loyaltyPointModel?.content?.transactions?.total ?? listOfTransaction.length,
             onPaginate: (int offset) async => await loyaltyPointController.getLoyaltyPointData(
               offset, reload: false,
             ),
-            offset: loyaltyPointController.loyaltyPointModel!.content!.transactions?.currentPage,
+            offset: loyaltyPointController.loyaltyPointModel?.content?.transactions?.currentPage ?? 1,
             itemView: GridView.builder(gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: ResponsiveHelper.isDesktop(context)?2:1,
                 mainAxisExtent: 120,crossAxisSpacing: Dimensions.paddingSizeDefault),

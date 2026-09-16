@@ -64,7 +64,7 @@ class _RecommendedSearchState extends State<RecommendedSearch> {
                         onTap: (){
                           Get.back();
                           FocusScope.of(context).unfocus();
-                          RouteHelper.toSearchResult(queryText: serviceController.recommendedSearchList?[index].name??'');
+                          Get.toNamed(RouteHelper.getSearchResultRoute(queryText: serviceController.recommendedSearchList?[index].name??''));
                           Get.find<AllSearchController>().populatedSearchController(serviceController.recommendedSearchList?[index].name??'');
                          },
                         child: Text(
