@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:demandium/feature/search/model/filter_model.dart';
 import 'package:demandium/feature/search/model/search_service_model.dart';
 import 'package:demandium/feature/search/model/search_suggestion_model.dart';
@@ -127,56 +128,150 @@ class AllSearchController extends GetxController implements GetxService {
 
 
   Future<void> searchData({required String query, required offset, bool shouldUpdate = true, bool reload = true}) async {
-
-   _historyList ??= [];
-   if(query.isNotEmpty){
-     if (!_historyList!.contains(query)) {
-       _historyList!.insert(0, query);
-     }
-     try {
-       searchRepo.saveSearchHistory(_historyList!);
-     } catch (_) {}
-   }
-
-
-   if(reload){
-     _searchServiceList = null;
-   }
-
-   if(shouldUpdate) {
-     update();
-   }
-
-   try {
-    Response response = await searchRepo.getSearchData(
-      query: query, offset: offset, sortBy: _selectedSortBy, sortByType: _selectedSortByType != "default" ? _selectedSortByType : "",
-      minPrice: _filteredMinPrice ?? 0, maxPrice: _filteredMaxPrice ?? _serviceModel?.content?.initialMaxPrice ?? 0, rating: _selectedRating, categoryIdes: _selectedCategoryId,
-    );
-    if (response.statusCode == 200 && response.body is Map) {
-      _serviceModel = SearchServiceModel.fromJson(Map<String, dynamic>.from(response.body));
-
-      if(_searchServiceList!= null && offset != 1){
-        _searchServiceList!.addAll(_serviceModel?.content?.servicesContent?.serviceList ??[]);
-      }else{
-        _searchServiceList = [];
-        _searchServiceList!.addAll(_serviceModel?.content?.servicesContent?.serviceList ??[]);
+    _historyList ??= [];
+    if(query.isNotEmpty){
+      if (!_historyList!.contains(query)) {
+        _historyList!.insert(0, query);
       }
-
-      _initialMinPrice = _serviceModel?.content?.initialMinPrice ?? 0;
-      _initialMaxPrice =  _serviceModel?.content?.initialMaxPrice ?? 100;
-
-    } else {
-      _searchServiceList ??= [];
+      try {
+        searchRepo.saveSearchHistory(_historyList!);
+      } catch (_) {}
     }
-   } catch (_) {
-     _searchServiceList ??= [];
-   }
 
-   updatedIsSortedAppliedStatus(shouldUpdate: false);
-   updatedIsFilteredAppliedStatus(shouldUpdate: false);
+    final localMatches = _localMatches(query);
+    if (localMatches.isNotEmpty && (_searchServiceList == null || reload)) {
+      _searchServiceList = List<Service>.from(localMatches);
+      if (shouldUpdate) {
+        update();
+      }
+    } else if (reload && _searchServiceList == null) {
+      if (shouldUpdate) {
+        update();
+      }
+    }
 
+    try {
+      Response response = await searchRepo.getSearchData(
+        query: query, offset: offset, sortBy: _selectedSortBy, sortByType: _selectedSortByType != "default" ? _selectedSortByType : "",
+        minPrice: _filteredMinPrice ?? 0, maxPrice: _filteredMaxPrice ?? _serviceModel?.content?.initialMaxPrice ?? 0, rating: _selectedRating, categoryIdes: _selectedCategoryId,
+      );
+      final fetched = _extractServices(response.body, query);
+      if (fetched.isNotEmpty || localMatches.isEmpty) {
+        if(_searchServiceList!= null && offset != 1 && fetched.isNotEmpty){
+          _searchServiceList!.addAll(fetched);
+        }else if (fetched.isNotEmpty){
+          _searchServiceList = fetched;
+        }
+      }
+      if (response.body is Map) {
+        try {
+          _serviceModel = SearchServiceModel.fromJson(Map<String, dynamic>.from(response.body));
+          _initialMinPrice = _serviceModel?.content?.initialMinPrice ?? 0;
+          _initialMaxPrice =  _serviceModel?.content?.initialMaxPrice ?? 100;
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    _searchServiceList ??= List<Service>.from(localMatches);
+    updatedIsSortedAppliedStatus(shouldUpdate: false);
+    updatedIsFilteredAppliedStatus(shouldUpdate: false);
     _isSearchComplete = true;
     update();
+  }
+
+  List<Service> _extractServices(dynamic body, String query) {
+    final services = <Service>[];
+    try {
+      dynamic data = body;
+      if (data is String && data.isNotEmpty) {
+        data = jsonDecode(data);
+      }
+      if (data is Map) {
+        final content = data['content'];
+        dynamic list;
+        if (content is Map) {
+          final nested = content['services'];
+          if (nested is Map) {
+            list = nested['data'] ?? nested['services'];
+          } else if (nested is List) {
+            list = nested;
+          } else {
+            list = content['data'] ?? content['service_list'];
+          }
+        } else if (content is List) {
+          list = content;
+        } else {
+          list = data['data'];
+        }
+        if (list is List) {
+          for (final item in list) {
+            if (item is Map) {
+              try {
+                services.add(Service.fromJson(Map<String, dynamic>.from(item)));
+              } catch (_) {}
+            }
+          }
+        }
+      } else if (data is List) {
+        for (final item in data) {
+          if (item is Map) {
+            try {
+              services.add(Service.fromJson(Map<String, dynamic>.from(item)));
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
+
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) {
+      return services;
+    }
+    final filtered = services.where((service) {
+      final name = (service.name ?? '').toLowerCase();
+      final short = (service.shortDescription ?? '').toLowerCase();
+      return name.contains(q) || short.contains(q);
+    }).toList();
+    return filtered.isNotEmpty ? filtered : services;
+  }
+
+  List<Service> _localMatches(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) {
+      return [];
+    }
+    try {
+      final controller = Get.find<ServiceController>();
+      final seen = <String>{};
+      final matches = <Service>[];
+      void addAll(List<Service>? list) {
+        if (list == null) {
+          return;
+        }
+        for (final service in list) {
+          final id = service.id ?? service.name ?? '';
+          if (id.isEmpty || seen.contains(id)) {
+            continue;
+          }
+          final name = (service.name ?? '').toLowerCase();
+          final short = (service.shortDescription ?? '').toLowerCase();
+          if (name.contains(q) || short.contains(q)) {
+            seen.add(id);
+            matches.add(service);
+          }
+        }
+      }
+      addAll(controller.allService);
+      addAll(controller.popularServiceList);
+      addAll(controller.trendingServiceList);
+      addAll(controller.recommendedServiceList);
+      addAll(controller.recentlyViewServiceList);
+      addAll(controller.offerBasedServiceList);
+      addAll(controller.subCategoryBasedServiceList);
+      return matches;
+    } catch (_) {
+      return [];
+    }
   }
 
   Future<void> getSearchSuggestion(String query, {bool shouldUpdate = true,}) async {

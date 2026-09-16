@@ -21,7 +21,13 @@ class SearchRepo {
         "category_ids" : categoryIdes
       });
     }
-    return await apiClient.postData("${AppConstants.searchUri}?limit=10&offset=$offset", data);
+    try {
+      final response = await apiClient.postData("${AppConstants.searchUri}?limit=10&offset=$offset", data);
+      if (response.statusCode == 200) {
+        return response;
+      }
+    } catch (_) {}
+    return await apiClient.getData('${AppConstants.allServiceUri}?limit=100&offset=$offset');
   }
 
   Future<Response> getSearchSuggestion({String? query}) async {

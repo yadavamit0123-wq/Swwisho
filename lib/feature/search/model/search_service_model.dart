@@ -9,11 +9,11 @@ class SearchServiceModel {
   SearchServiceModel({this.responseCode, this.message, this.content});
 
   SearchServiceModel.fromJson(Map<String, dynamic> json) {
-    responseCode = json['response_code'];
-    message = json['message'];
-    content =
-    json['content'] != null ? Content.fromJson(json['content']) : null;
-
+    responseCode = json['response_code']?.toString();
+    message = json['message']?.toString();
+    if (json['content'] is Map) {
+      content = Content.fromJson(Map<String, dynamic>.from(json['content']));
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -38,13 +38,16 @@ class Content {
   Content({this.initialMinPrice, this.initialMaxPrice, this.servicesContent});
 
   Content.fromJson(Map<String, dynamic> json) {
-    initialMinPrice = double.tryParse(json['initial_min_price'].toString());
-    initialMaxPrice = double.tryParse(json['initial_max_price'].toString());
-    filteredMinPrice = double.tryParse(json['filter_min_price'].toString());
-    filteredMaxPrice = double.tryParse(json['filter_max_price'].toString());
-    servicesContent = json['services'] != null
-        ? ServiceContent.fromJson(json['services'])
-        : null;
+    initialMinPrice = double.tryParse('${json['initial_min_price'] ?? ''}');
+    initialMaxPrice = double.tryParse('${json['initial_max_price'] ?? ''}');
+    filteredMinPrice = double.tryParse('${json['filter_min_price'] ?? ''}');
+    filteredMaxPrice = double.tryParse('${json['filter_max_price'] ?? ''}');
+    final services = json['services'] ?? json['data'];
+    if (services is Map) {
+      servicesContent = ServiceContent.fromJson(Map<String, dynamic>.from(services));
+    } else if (services is List) {
+      servicesContent = ServiceContent.fromJson({'data': services});
+    }
   }
 
   Map<String, dynamic> toJson() {
