@@ -179,7 +179,12 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
     if (id == null || id.isEmpty) {
       return;
     }
-    Get.to(() => _SubCategoryServicesScreen(subCategory: subCategory));
+    try {
+      final controller = Get.find<ServiceController>();
+      controller.cleanSubCategory();
+      controller.searchController.clear();
+    } catch (_) {}
+    Get.to(() => AllServiceView(fromPage: id));
   }
 
   @override
@@ -344,159 +349,6 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SubCategoryServicesScreen extends StatefulWidget {
-  final CategoryModel subCategory;
-  const _SubCategoryServicesScreen({required this.subCategory});
-
-  @override
-  State<_SubCategoryServicesScreen> createState() => _SubCategoryServicesScreenState();
-}
-
-class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> {
-  static final Map<String, List<Service>> _serviceCache = {};
-  bool _loading = true;
-  List<Service> _services = [];
-
-  @override
-  void initState() {
-    super.initState();
-    final cached = _serviceCache[widget.subCategory.id ?? ''];
-    if (cached != null) {
-      _services = List<Service>.from(cached);
-      _loading = false;
-    }
-    _load();
-  }
-
-  List<Map<String, dynamic>> _extractList(dynamic data) {
-    if (data is String && data.isNotEmpty) {
-      try {
-        data = jsonDecode(data);
-      } catch (_) {}
-    }
-    if (data is List) {
-      return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
-    }
-    if (data is Map) {
-      final content = data['content'];
-      dynamic list;
-      if (content is Map) {
-        list = content['data'] ?? content['services'];
-      } else if (content is List) {
-        list = content;
-      } else {
-        list = data['data'];
-      }
-      if (list is List) {
-        return list.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
-      }
-    }
-    return [];
-  }
-
-  Future<void> _load() async {
-    try {
-      HomeScreen.ensureZoneHeader();
-      final id = widget.subCategory.id ?? '';
-      final response = await Get.find<ApiClient>().getData('${AppConstants.serviceBasedOnSubCategory}$id?limit=50&offset=1');
-      final services = <Service>[];
-      for (final item in _extractList(response.body)) {
-        try {
-          services.add(Service.fromJson(item));
-        } catch (_) {}
-      }
-      if (!mounted) {
-        return;
-      }
-      _serviceCache[id] = List<Service>.from(services);
-      setState(() {
-        _services = services;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _loading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: AppBar(
-        title: Text(widget.subCategory.name ?? 'services'.tr),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-          : _services.isEmpty
-              ? const Center(child: Text('No service found'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _services.length,
-                  itemBuilder: (context, index) {
-                    final service = _services[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: InkWell(
-                        onTap: () {
-                          final id = service.id;
-                          if (id == null || id.isEmpty) {
-                            return;
-                          }
-                          RouteHelper.toServiceDetails(id);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: SizedBox(
-                                  height: 72,
-                                  width: 72,
-                                  child: CustomImage(
-                                    image: service.thumbnailFullPath ?? '',
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  service.name ?? '',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: Colors.transparent,
-                                    builder: (_) => ServiceCenterDialog(service: service),
-                                  );
-                                },
-                                icon: Icon(Icons.add, color: Theme.of(context).primaryColor),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
     );
   }
 }
