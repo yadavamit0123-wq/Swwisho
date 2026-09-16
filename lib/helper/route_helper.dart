@@ -149,6 +149,19 @@ class RouteHelper {
     return Get.to(() => SearchResultScreen(queryText: queryText ?? '', fromPage: fromPage)) ?? Future.value();
   }
 
+  static Future<void> openSearchResult(BuildContext context, {String? queryText, String? fromPage}) async {
+    try {
+      FocusScope.of(context).unfocus();
+    } catch (_) {}
+    try {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {}
+    await Future<void>.delayed(Duration.zero);
+    return toSearchResult(queryText: queryText, fromPage: fromPage);
+  }
+
   static String getServiceRoute(String id, {String fromPage="others"}) => '$serviceDetails?id=$id&fromPage=$fromPage';
 
   static Future<void> toServiceDetails(String id, {String fromPage = "others"}) {

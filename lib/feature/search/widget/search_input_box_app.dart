@@ -55,10 +55,8 @@ class _SearchInputBoxAppState extends State<SearchInputBoxApp> {
                 }else if (searchController.searchController.text.isEmpty){
                   customSnackBar('search_text_empty_message'.tr, showDefaultSnackBar: false, type: ToasterMessageType.info);
                 }else{
-                  Get.back();
                   FocusScope.of(context).unfocus();
-                  Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.searchController.text));
-                  FocusScope.of(context).unfocus();
+                  RouteHelper.openSearchResult(context, queryText: searchController.searchController.text);
                 }
               },
               child: Container(height: 45, width: 45,
@@ -86,9 +84,8 @@ class _SearchInputBoxAppState extends State<SearchInputBoxApp> {
               if(text.length > 255){
                 customSnackBar('search_text_length_message'.tr, type: ToasterMessageType.info);
               }else{
-                Get.back();
                 FocusScope.of(context).unfocus();
-                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: text));
+                RouteHelper.openSearchResult(context, queryText: text);
               }
             }else{
               customSnackBar('search_text_empty_message'.tr, type: ToasterMessageType.info);

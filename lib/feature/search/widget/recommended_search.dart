@@ -62,10 +62,8 @@ class _RecommendedSearchState extends State<RecommendedSearch> {
                       child: InkWell(
                         hoverColor: Colors.transparent,
                         onTap: (){
-                          Get.back();
-                          FocusScope.of(context).unfocus();
-                          Get.toNamed(RouteHelper.getSearchResultRoute(queryText: serviceController.recommendedSearchList?[index].name??''));
                           Get.find<AllSearchController>().populatedSearchController(serviceController.recommendedSearchList?[index].name??'');
+                          RouteHelper.openSearchResult(context, queryText: serviceController.recommendedSearchList?[index].name??'');
                          },
                         child: Text(
                           serviceController.recommendedSearchList?[index].name??"",

@@ -89,17 +89,15 @@ class AllSearchController extends GetxController implements GetxService {
 
 
   Future<void> navigateToSearchResultScreen()async{
-
-    if(Get.isDialogOpen! && Navigator.canPop(Get.context!)){
-      Get.back();
+    if(searchController.value.text.trim().isEmpty){
+      return;
     }
-    if(searchController.value.text.trim().isNotEmpty){
-      if(Get.currentRoute.contains('/search?query=')){
-        Get.offNamed(RouteHelper.getSearchResultRoute(queryText: searchController.value.text.trim()));
-      }else{
-        Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.value.text.trim()));
-      }
+    final context = Get.context;
+    if (context != null) {
+      await RouteHelper.openSearchResult(context, queryText: searchController.value.text.trim());
+      return;
     }
+    await RouteHelper.toSearchResult(queryText: searchController.value.text.trim());
   }
 
   Future<void> clearSearchController({bool shouldUpdate = true})async{
@@ -130,11 +128,14 @@ class AllSearchController extends GetxController implements GetxService {
 
   Future<void> searchData({required String query, required offset, bool shouldUpdate = true, bool reload = true}) async {
 
+   _historyList ??= [];
    if(query.isNotEmpty){
      if (!_historyList!.contains(query)) {
        _historyList!.insert(0, query);
      }
-     searchRepo.saveSearchHistory(_historyList!);
+     try {
+       searchRepo.saveSearchHistory(_historyList!);
+     } catch (_) {}
    }
 
 
@@ -146,13 +147,13 @@ class AllSearchController extends GetxController implements GetxService {
      update();
    }
 
+   try {
     Response response = await searchRepo.getSearchData(
       query: query, offset: offset, sortBy: _selectedSortBy, sortByType: _selectedSortByType != "default" ? _selectedSortByType : "",
       minPrice: _filteredMinPrice ?? 0, maxPrice: _filteredMaxPrice ?? _serviceModel?.content?.initialMaxPrice ?? 0, rating: _selectedRating, categoryIdes: _selectedCategoryId,
     );
-    if (response.statusCode == 200) {
-
-      _serviceModel = SearchServiceModel.fromJson(response.body);
+    if (response.statusCode == 200 && response.body is Map) {
+      _serviceModel = SearchServiceModel.fromJson(Map<String, dynamic>.from(response.body));
 
       if(_searchServiceList!= null && offset != 1){
         _searchServiceList!.addAll(_serviceModel?.content?.servicesContent?.serviceList ??[]);
@@ -165,7 +166,11 @@ class AllSearchController extends GetxController implements GetxService {
       _initialMaxPrice =  _serviceModel?.content?.initialMaxPrice ?? 100;
 
     } else {
+      _searchServiceList ??= [];
     }
+   } catch (_) {
+     _searchServiceList ??= [];
+   }
 
    updatedIsSortedAppliedStatus(shouldUpdate: false);
    updatedIsFilteredAppliedStatus(shouldUpdate: false);

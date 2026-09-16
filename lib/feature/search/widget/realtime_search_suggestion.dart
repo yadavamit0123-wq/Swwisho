@@ -14,7 +14,7 @@ class RealTimeSearchSuggestion extends StatelessWidget {
           maxHeight: 300
         ),
         child: ListView.separated(itemBuilder: (context, index){
-          final item = suggestionList[index].name!;
+          final item = suggestionList[index].name ?? '';
           final searchQuery = searchController.searchController.text.trim();
 
           if(searchQuery.isNotEmpty && item.toLowerCase().contains(searchQuery.toLowerCase())){
@@ -50,10 +50,8 @@ class RealTimeSearchSuggestion extends StatelessWidget {
               leading: suggestionList[index].isSearched == 1 ?
               Icon(Icons.refresh,color: Theme.of(context).hintColor, size: 18) :Image.asset( Images.searchIcon, color: Theme.of(context).hintColor, width: 18,),
               onTap: (){
-                Get.back();
-                FocusScope.of(context).unfocus();
-                searchController.populatedSearchController(suggestionList[index].name!);
-                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: suggestionList[index].name!));
+                searchController.populatedSearchController(suggestionList[index].name ?? '');
+                RouteHelper.openSearchResult(context, queryText: suggestionList[index].name ?? '');
               },
             );
 
@@ -70,10 +68,8 @@ class RealTimeSearchSuggestion extends StatelessWidget {
               leading: suggestionList[index].isSearched == 1 ?
               Icon(Icons.refresh,color: Theme.of(context).hintColor, size: 18) :Image.asset( Images.searchIcon, color: Theme.of(context).hintColor, width: 18,),
               onTap: (){
-                Get.back();
-                FocusScope.of(context).unfocus();
-                searchController.populatedSearchController(suggestionList[index].name!);
-                Get.toNamed(RouteHelper.getSearchResultRoute(queryText: suggestionList[index].name!));
+                searchController.populatedSearchController(suggestionList[index].name ?? '');
+                RouteHelper.openSearchResult(context, queryText: suggestionList[index].name ?? '');
               },
             );
           }

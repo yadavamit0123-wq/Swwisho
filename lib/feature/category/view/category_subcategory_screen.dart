@@ -179,12 +179,7 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
     if (id == null || id.isEmpty) {
       return;
     }
-    try {
-      final controller = Get.find<ServiceController>();
-      controller.cleanSubCategory();
-      controller.searchController.clear();
-    } catch (_) {}
-    Get.to(() => AllServiceView(fromPage: id));
+    Get.to(() => _SubCategoryServicesScreen(subCategory: subCategory));
   }
 
   @override
@@ -348,6 +343,258 @@ class _CategorySubCategoryScreenState extends State<CategorySubCategoryScreen> {
               }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SubCategoryServicesScreen extends StatefulWidget {
+  final CategoryModel subCategory;
+  const _SubCategoryServicesScreen({required this.subCategory});
+
+  @override
+  State<_SubCategoryServicesScreen> createState() => _SubCategoryServicesScreenState();
+}
+
+class _SubCategoryServicesScreenState extends State<_SubCategoryServicesScreen> {
+  static final Map<String, List<Service>> _serviceCache = {};
+  final TextEditingController _searchController = TextEditingController();
+  bool _loading = true;
+  List<Service> _services = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final cached = _serviceCache[widget.subCategory.id ?? ''];
+    if (cached != null) {
+      _services = List<Service>.from(cached);
+      _loading = false;
+    }
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Service> get _visibleServices {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return _services;
+    }
+    return _services.where((service) {
+      return (service.name ?? '').toLowerCase().contains(query);
+    }).toList();
+  }
+
+  String _price(Service service) {
+    try {
+      num lowest = service.variationsAppFormat?.defaultPrice ?? 0;
+      final variations = service.variationsAppFormat?.zoneWiseVariations ?? [];
+      for (final variation in variations) {
+        final price = variation.price ?? 0;
+        if (lowest == 0 || price < lowest) {
+          lowest = price;
+        }
+      }
+      if (lowest <= 0) {
+        return '';
+      }
+      return PriceConverter.convertPrice(lowest.toDouble());
+    } catch (_) {
+      return '';
+    }
+  }
+
+  List<Map<String, dynamic>> _extractList(dynamic data) {
+    if (data is String && data.isNotEmpty) {
+      try {
+        data = jsonDecode(data);
+      } catch (_) {}
+    }
+    if (data is List) {
+      return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    }
+    if (data is Map) {
+      final content = data['content'];
+      dynamic list;
+      if (content is Map) {
+        list = content['data'] ?? content['services'];
+      } else if (content is List) {
+        list = content;
+      } else {
+        list = data['data'];
+      }
+      if (list is List) {
+        return list.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+    }
+    return [];
+  }
+
+  Future<void> _load() async {
+    try {
+      HomeScreen.ensureZoneHeader();
+      final id = widget.subCategory.id ?? '';
+      final response = await Get.find<ApiClient>().getData('${AppConstants.serviceBasedOnSubCategory}$id?limit=50&offset=1');
+      final services = <Service>[];
+      for (final item in _extractList(response.body)) {
+        try {
+          services.add(Service.fromJson(item));
+        } catch (_) {}
+      }
+      if (!mounted) {
+        return;
+      }
+      _serviceCache[id] = List<Service>.from(services);
+      setState(() {
+        _services = services;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _loading = false);
+    }
+  }
+
+  void _openAddToCart(Service service) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ServiceCenterDialog(service: service),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = _visibleServices;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
+      appBar: AppBar(
+        title: Text(widget.subCategory.name ?? 'services'.tr),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: TextField(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'search_services'.tr,
+                suffixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
+              ),
+              onChanged: (_) {
+                if (mounted) {
+                  setState(() {});
+                }
+              },
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                : visible.isEmpty
+                    ? Center(
+                        child: Text(
+                          _searchController.text.trim().isEmpty
+                              ? 'No service found'
+                              : 'Result not found',
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        itemCount: visible.length,
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          mainAxisExtent: 230,
+                        ),
+                        itemBuilder: (context, index) {
+                          final service = visible[index];
+                          final price = _price(service);
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    final id = service.id;
+                                    if (id == null || id.isEmpty) {
+                                      return;
+                                    }
+                                    RouteHelper.toServiceDetails(id);
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                        child: SizedBox(
+                                          height: 110,
+                                          width: double.infinity,
+                                          child: CustomImage(
+                                            image: service.thumbnailFullPath ?? service.coverImageFullPath ?? '',
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
+                                        child: Text(
+                                          service.name ?? '',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                        ),
+                                      ),
+                                      if (price.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                                          child: Text(
+                                            price,
+                                            style: TextStyle(
+                                              color: Theme.of(context).primaryColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const Spacer(),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: IconButton(
+                                    onPressed: () => _openAddToCart(service),
+                                    icon: Icon(Icons.add, color: Theme.of(context).primaryColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }

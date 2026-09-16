@@ -45,10 +45,8 @@ class RecentSearch extends StatelessWidget {
                 margin: const EdgeInsets.only(right: Dimensions.paddingSizeSmall),
                 child: InkWell(
                   onTap: () {
-                    Get.back();
-                    FocusScope.of(context).unfocus();
                     searchController.populatedSearchController(searchController.historyList![index]);
-                    Get.toNamed(RouteHelper.getSearchResultRoute(queryText: searchController.historyList![index]));
+                    RouteHelper.openSearchResult(context, queryText: searchController.historyList![index]);
                   },
                   child: ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: Get.width * 0.85,),
