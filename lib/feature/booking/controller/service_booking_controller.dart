@@ -102,23 +102,8 @@ class ServiceBookingController extends GetxController implements GetxService {
     return code.contains('200');
   }
 
-  bool _isMissingRebookEndpoint(Response response) {
-    if (response.statusCode == 405 || response.statusCode == 404) {
-      return true;
-    }
-    final message = (_responseMessage(response) ?? '').toLowerCase();
-    if (message.contains('information not found') || message.contains('method not allowed')) {
-      return true;
-    }
-    final code = (response.body is Map ? response.body['response_code'] : null)?.toString() ?? '';
-    if (code.contains('404')) {
-      return true;
-    }
-    if (response.body is String &&
-        response.body.toString().toLowerCase().contains('method not allowed')) {
-      return true;
-    }
-    return false;
+  bool _isAuthFailure(Response response) {
+    return response.statusCode == 401;
   }
 
   String? _responseMessage(Response response) {
@@ -261,7 +246,9 @@ class ServiceBookingController extends GetxController implements GetxService {
           _responseMessage(response) ?? 'success'.tr,
           type: ToasterMessageType.success,
         );
-      } else if (_isMissingRebookEndpoint(response)) {
+      } else if (_isAuthFailure(response)) {
+        _showApiFailure(response);
+      } else {
         final added = await _rebookViaCart(bookingId);
         if (added) {
           await _closeRebookOverlayIfNeeded(isBack);
@@ -269,8 +256,6 @@ class ServiceBookingController extends GetxController implements GetxService {
         } else {
           customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
         }
-      } else {
-        _showApiFailure(response);
       }
     } catch (_) {
       customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
@@ -298,13 +283,12 @@ class ServiceBookingController extends GetxController implements GetxService {
       _closeLoaderDialog(loaderOpen);
       loaderOpen = false;
 
-      if (_isMissingRebookEndpoint(response)) {
-        await rebook(bookingId);
-        return;
-      }
-
       if (!_isSuccessfulResponse(response)) {
-        _showApiFailure(response);
+        if (_isAuthFailure(response)) {
+          _showApiFailure(response);
+        } else {
+          await rebook(bookingId);
+        }
         return;
       }
 
