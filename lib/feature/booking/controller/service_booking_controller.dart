@@ -102,6 +102,25 @@ class ServiceBookingController extends GetxController implements GetxService {
     return code.contains('200');
   }
 
+  bool _isMissingRebookEndpoint(Response response) {
+    if (response.statusCode == 405 || response.statusCode == 404) {
+      return true;
+    }
+    final message = (_responseMessage(response) ?? '').toLowerCase();
+    if (message.contains('information not found') || message.contains('method not allowed')) {
+      return true;
+    }
+    final code = (response.body is Map ? response.body['response_code'] : null)?.toString() ?? '';
+    if (code.contains('404')) {
+      return true;
+    }
+    if (response.body is String &&
+        response.body.toString().toLowerCase().contains('method not allowed')) {
+      return true;
+    }
+    return false;
+  }
+
   String? _responseMessage(Response response) {
     if (response.body is Map && response.body['message'] != null) {
       return response.body['message'].toString();
@@ -160,21 +179,81 @@ class ServiceBookingController extends GetxController implements GetxService {
     );
   }
 
+  Future<void> _closeRebookOverlayIfNeeded(bool isBack) async {
+    if (!isBack) return;
+    try {
+      if (Get.isBottomSheetOpen ?? false) {
+        Get.back();
+      } else if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    } catch (_) {}
+  }
+
+  Future<bool> _rebookViaCart(String bookingId) async {
+    Response detailsResponse = await serviceBookingRepo.getBookingDetails(bookingID: bookingId);
+    if (detailsResponse.statusCode != 200 || detailsResponse.body is! Map) {
+      return false;
+    }
+
+    BookingDetailsContent? content;
+    try {
+      content = BookingDetailsModel.fromJson(
+        Map<String, dynamic>.from(detailsResponse.body),
+      ).content;
+    } catch (_) {}
+
+    final items = content?.bookingDetails ?? [];
+    if (content == null || items.isEmpty) {
+      return false;
+    }
+
+    int added = 0;
+    for (final item in items) {
+      final serviceId = item.serviceId ?? item.service?.id;
+      if (serviceId == null || serviceId.isEmpty) {
+        continue;
+      }
+
+      final cartBody = CartModelBody(
+        serviceId: serviceId,
+        categoryId: content.categoryId ?? item.service?.categoryId,
+        variantKey: item.variantKey,
+        quantity: (item.quantity ?? 1).toString(),
+        subCategoryId: content.subCategoryId ?? item.service?.subCategoryId,
+        providerId: content.providerId,
+        guestId: Get.find<SplashController>().getGuestId(),
+      );
+
+      try {
+        Response addResponse = await Get.find<CartRepo>().addToCartListToServer(cartBody);
+        if (addResponse.statusCode != 200 && cartBody.providerId != null) {
+          cartBody.providerId = null;
+          addResponse = await Get.find<CartRepo>().addToCartListToServer(cartBody);
+        }
+        if (addResponse.statusCode == 200) {
+          added++;
+        }
+      } catch (_) {}
+    }
+
+    if (added == 0) {
+      return false;
+    }
+
+    try {
+      await Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
+    } catch (_) {}
+    return true;
+  }
+
   Future<void> rebook(String bookingId, {bool isBack = false}) async {
     _isLoading = true;
     update();
     try {
       Response response = await serviceBookingRepo.addRebookToServer(bookingId);
       if (_isSuccessfulResponse(response)) {
-        if (isBack) {
-          try {
-            if (Get.isBottomSheetOpen ?? false) {
-              Get.back();
-            } else if (Get.isDialogOpen ?? false) {
-              Get.back();
-            }
-          } catch (_) {}
-        }
+        await _closeRebookOverlayIfNeeded(isBack);
         try {
           await Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
         } catch (_) {}
@@ -182,6 +261,14 @@ class ServiceBookingController extends GetxController implements GetxService {
           _responseMessage(response) ?? 'success'.tr,
           type: ToasterMessageType.success,
         );
+      } else if (_isMissingRebookEndpoint(response)) {
+        final added = await _rebookViaCart(bookingId);
+        if (added) {
+          await _closeRebookOverlayIfNeeded(isBack);
+          customSnackBar('successfully_added_to_cart'.tr, type: ToasterMessageType.success);
+        } else {
+          customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+        }
       } else {
         _showApiFailure(response);
       }
@@ -210,6 +297,11 @@ class ServiceBookingController extends GetxController implements GetxService {
       Response response = await serviceBookingRepo.rebookCheck(bookingId);
       _closeLoaderDialog(loaderOpen);
       loaderOpen = false;
+
+      if (_isMissingRebookEndpoint(response)) {
+        await rebook(bookingId);
+        return;
+      }
 
       if (!_isSuccessfulResponse(response)) {
         _showApiFailure(response);

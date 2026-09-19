@@ -17,17 +17,17 @@ class ServiceBookingRepo{
   }
 
   Future<Response> addRebookToServer(String bookingId) async {
-    final guestId = Get.find<SplashController>().getGuestId();
-    return await apiClient.getData(
-      '${AppConstants.rebookApi}?booking_id=$bookingId&guest_id=$guestId',
-    );
+    return await apiClient.postData(AppConstants.rebookApi, {
+      'booking_id': bookingId,
+      'guest_id': Get.find<SplashController>().getGuestId(),
+    });
   }
 
   Future<Response> rebookCheck(String bookingId) async {
-    final guestId = Get.find<SplashController>().getGuestId();
-    return await apiClient.getData(
-      '${AppConstants.rebookAvailabilityApi}?booking_id=$bookingId&guest_id=$guestId',
-    );
+    return await apiClient.postData(AppConstants.rebookAvailabilityApi, {
+      'booking_id': bookingId,
+      'guest_id': Get.find<SplashController>().getGuestId(),
+    });
   }
 
 }
