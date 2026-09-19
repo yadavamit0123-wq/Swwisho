@@ -313,7 +313,10 @@ class WebBookingDetailsSection extends StatelessWidget {
                   builder: (serviceBookingController) {
                     return Expanded(
                       child: serviceBookingController.isLoading ? const Center(child: CircularProgressIndicator()) : CustomButton (radius: 0, buttonText: 'rebook'.tr,  onPressed: () {
-                        serviceBookingController.checkCartSubcategory(bookingDetailsController.bookingDetailsContent!.id!, bookingDetailsController.bookingDetailsContent!.subCategoryId!);
+                        serviceBookingController.checkCartSubcategory(
+                          bookingDetailsController.bookingDetailsContent!.id!,
+                          bookingDetailsController.bookingDetailsContent!.subCategoryId ?? "",
+                        );
 
                       },
                       ),

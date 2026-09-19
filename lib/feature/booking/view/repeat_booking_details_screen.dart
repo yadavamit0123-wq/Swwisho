@@ -235,7 +235,10 @@ class RepeatBookingTabBar extends StatelessWidget {
                       return InkWell(
                         onTap: () {
                           if(bookingDetails.bookingStatus == "completed"){
-                            serviceBookingController.checkCartSubcategory(bookingDetails.id!, bookingDetails.subCategoryId!);
+                            serviceBookingController.checkCartSubcategory(
+                              bookingDetails.id!,
+                              bookingDetails.subCategoryId ?? "",
+                            );
                           }else{
                             Get.dialog(
                               ConfirmationDialog(

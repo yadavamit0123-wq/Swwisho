@@ -52,6 +52,8 @@ class SubmitReviewController extends GetxController {
 
 
   Future<void> getReviewList(String bookingId)async{
+    _loading = true;
+    update();
 
     Response response =await submitReviewRepo.getReviewList(bookingId: bookingId);
     if(response.statusCode == 200){

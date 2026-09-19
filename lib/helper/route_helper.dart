@@ -168,6 +168,20 @@ class RouteHelper {
     return Get.to(() => ServiceDetailsScreen(serviceID: id, fromPage: fromPage)) ?? Future.value();
   }
 
+  static Future<void> toRateReviewScreen(String id) {
+    return Get.to(() => RateReviewScreen(id: id)) ?? Future.value();
+  }
+
+  static Future<void> openRateReviewScreen(BuildContext context, {required String bookingId}) async {
+    try {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {}
+    await Future<void>.delayed(Duration.zero);
+    return toRateReviewScreen(bookingId);
+  }
+
   static Future<void> toSuggestService() {
     return Get.to(() => const SuggestServiceScreen()) ?? Future.value();
   }

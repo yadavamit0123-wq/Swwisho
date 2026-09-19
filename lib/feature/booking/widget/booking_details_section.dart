@@ -144,7 +144,10 @@ class BookingDetailsSection extends StatelessWidget {
                           isLoading: serviceBookingController.isLoading,
                           buttonText: "rebook".tr,
                           onPressed: () {
-                            serviceBookingController.checkCartSubcategory(bookingDetailsController.bookingDetailsContent!.id!, bookingDetailsController.bookingDetailsContent!.subCategoryId!);
+                            serviceBookingController.checkCartSubcategory(
+                              bookingDetailsController.bookingDetailsContent!.id!,
+                              bookingDetailsController.bookingDetailsContent!.subCategoryId ?? "",
+                            );
                           },
                         ),
                       );

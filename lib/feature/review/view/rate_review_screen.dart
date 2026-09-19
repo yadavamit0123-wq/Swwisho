@@ -38,6 +38,9 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
          return GetBuilder<SubmitReviewController>(builder: (submitReviewController){
            if(submitReviewController.loading){
              return const Center(child: CircularProgressIndicator(),);
+           }else if(submitReviewController.serviceReviewList == null
+               || submitReviewController.serviceReviewList!.isEmpty){
+             return const NoDataScreen(text: "no_data_found", type: NoDataType.bookings,);
            }else{
              return FooterBaseView(
                child: SizedBox(
@@ -83,7 +86,7 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
 
                          return Padding(
                            padding: EdgeInsets.symmetric(horizontal: ResponsiveHelper.isDesktop(context) ? 0 : Dimensions.paddingSizeDefault),
-                           child: submitReviewController.isEditable[submitReviewController.serviceReviewList![index].id!]!
+                           child: (submitReviewController.isEditable[submitReviewController.serviceReviewList![index].id!] ?? true)
                                ? EditableReview(serviceReview: submitReviewController.serviceReviewList?[index], index: index, variations: variations, bookingId: widget.id,)
                                : NonEditableReview(serviceReview: submitReviewController.serviceReviewList?[index], index: index, variations: variations),
                          );

@@ -97,10 +97,7 @@ class _ReviewRecommendationDialogState extends State<ReviewRecommendationDialog>
                           fontSize: Dimensions.fontSizeSmall,
                           buttonText: 'give_review'.tr,
                           onPressed: () {
-                            Get.back();
-                            Get.toNamed(RouteHelper.getRateReviewScreen(
-                                widget.id
-                            ));
+                            RouteHelper.openRateReviewScreen(context, bookingId: widget.id);
                           },
                         ),
                       ],

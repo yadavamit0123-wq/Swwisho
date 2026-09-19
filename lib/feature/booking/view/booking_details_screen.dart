@@ -301,7 +301,10 @@ class BookingTabBar extends StatelessWidget {
                       return InkWell(
                         onTap: () {
                           if(bookingDetailsContent.bookingStatus == "completed"){
-                            serviceBookingController.checkCartSubcategory(bookingDetailsContent.id!,bookingDetailsContent.subCategoryId!);
+                            serviceBookingController.checkCartSubcategory(
+                              bookingDetailsContent.id!,
+                              bookingDetailsContent.subCategoryId ?? "",
+                            );
                           }else{
                             Get.dialog(
                                 ConfirmationDialog(

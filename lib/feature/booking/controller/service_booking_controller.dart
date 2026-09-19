@@ -92,20 +92,98 @@ class ServiceBookingController extends GetxController implements GetxService {
   }
 
 
+  BuildContext? get _overlayContext => Get.overlayContext ?? Get.context;
+
+  bool _isSuccessfulResponse(Response response) {
+    if (response.statusCode != 200) return false;
+    if (response.body is! Map) return true;
+    final code = response.body['response_code']?.toString();
+    if (code == null || code.isEmpty) return true;
+    return code.contains('200');
+  }
+
+  String? _responseMessage(Response response) {
+    if (response.body is Map && response.body['message'] != null) {
+      return response.body['message'].toString();
+    }
+    if (response.statusText != null && response.statusText!.isNotEmpty) {
+      return response.statusText;
+    }
+    return null;
+  }
+
+  void _showApiFailure(Response response) {
+    if (response.statusCode == 1) {
+      customSnackBar(
+        response.statusText ?? 'connection_to_api_server_failed'.tr,
+        type: ToasterMessageType.error,
+      );
+      return;
+    }
+    final message = _responseMessage(response);
+    if (message != null && message.isNotEmpty) {
+      customSnackBar(message, type: ToasterMessageType.error);
+      return;
+    }
+    try {
+      ApiChecker.checkApi(response);
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+    }
+  }
+
+  void _closeLoaderDialog(bool loaderOpen) {
+    if (!loaderOpen) return;
+    try {
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+    } catch (_) {}
+  }
+
+  void _showRebookOverlay(Widget child) {
+    final context = _overlayContext;
+    if (context == null) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
+      return;
+    }
+    if (ResponsiveHelper.isDesktop(context)) {
+      Get.dialog(Center(child: child));
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (_) => child,
+    );
+  }
+
   Future<void> rebook(String bookingId, {bool isBack = false}) async {
     _isLoading = true;
     update();
     try {
       Response response = await serviceBookingRepo.addRebookToServer(bookingId);
-      if (response.statusCode == 200) {
-        if(isBack){
-          Get.back();
+      if (_isSuccessfulResponse(response)) {
+        if (isBack) {
+          try {
+            if (Get.isBottomSheetOpen ?? false) {
+              Get.back();
+            } else if (Get.isDialogOpen ?? false) {
+              Get.back();
+            }
+          } catch (_) {}
         }
-        Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
-        final message = (response.body is Map ? response.body['message'] : null)?.toString();
-        customSnackBar(message ?? 'success'.tr, type : ToasterMessageType.success);
+        try {
+          await Get.find<CartController>().getCartListFromServer(shouldUpdate: true);
+        } catch (_) {}
+        customSnackBar(
+          _responseMessage(response) ?? 'success'.tr,
+          type: ToasterMessageType.success,
+        );
       } else {
-        ApiChecker.checkApi(response);
+        _showApiFailure(response);
       }
     } catch (_) {
       customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
@@ -124,18 +202,17 @@ class ServiceBookingController extends GetxController implements GetxService {
 
     bool loaderOpen = false;
     try {
-      Get.dialog(const CustomLoader(), barrierDismissible: false);
-      loaderOpen = true;
+      try {
+        Get.dialog(const CustomLoader(), barrierDismissible: false);
+        loaderOpen = true;
+      } catch (_) {}
 
       Response response = await serviceBookingRepo.rebookCheck(bookingId);
-
-      if (loaderOpen && (Get.isDialogOpen ?? false)) {
-        Get.back();
-      }
+      _closeLoaderDialog(loaderOpen);
       loaderOpen = false;
 
-      if (response.statusCode != 200) {
-        ApiChecker.checkApi(response);
+      if (!_isSuccessfulResponse(response)) {
+        _showApiFailure(response);
         return;
       }
 
@@ -172,53 +249,50 @@ class ServiceBookingController extends GetxController implements GetxService {
       final isProviderAvailable = serviceAvailability?.content?.isProviderAvailable;
 
       if (isProviderAvailable == 0) {
-        if (ResponsiveHelper.isDesktop(Get.context)) {
-          Get.dialog(Center(child: RebookWarningBottomSheet(bookingId: bookingId)));
-        } else {
-          Get.bottomSheet(RebookWarningBottomSheet(bookingId: bookingId), backgroundColor: Colors.transparent, isScrollControlled: true);
-        }
+        _showRebookOverlay(RebookWarningBottomSheet(bookingId: bookingId));
       } else if (_isNotAvailable || _isPriceChanged) {
-        if (ResponsiveHelper.isDesktop(Get.context)) {
-          Get.dialog(Center(child: ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(services),)));
-        } else {
-          Get.bottomSheet(ServiceUnavailableDialog(bookingId: bookingId, isPriceChanged: _isPriceChanged, isNotAvailable: _isNotAvailable, isAllNotAvailable: checkAllServiceAvailable(services)), backgroundColor: Colors.transparent, isScrollControlled: true);
-        }
+        _showRebookOverlay(ServiceUnavailableDialog(
+          bookingId: bookingId,
+          isPriceChanged: _isPriceChanged,
+          isNotAvailable: _isNotAvailable,
+          isAllNotAvailable: checkAllServiceAvailable(services),
+        ));
       } else {
         await rebook(bookingId);
       }
     } catch (_) {
       customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
     } finally {
-      if (loaderOpen && (Get.isDialogOpen ?? false)) {
-        Get.back();
-      }
+      _closeLoaderDialog(loaderOpen);
       _isLoading = false;
       update();
     }
   }
 
 
-    Future<void> checkCartSubcategory(String bookingId, String subcategoryId) async {
-      if(Get.find<CartController>().cartList.isNotEmpty) {
-        List<CartModel> cartList =  Get.find<CartController>().cartList;
-        if(cartList[0].subCategoryId != subcategoryId) {
+  Future<void> checkCartSubcategory(String bookingId, String subcategoryId) async {
+    try {
+      if (subcategoryId.isNotEmpty && Get.find<CartController>().cartList.isNotEmpty) {
+        final cartList = Get.find<CartController>().cartList;
+        if (cartList[0].subCategoryId != subcategoryId) {
           Get.dialog(ConfirmationDialog(
             icon: Images.warning,
             title: "are_you_sure_to_reset".tr,
             description: 'you_have_service_from_other_sub_category'.tr,
             onYesPressed: () async {
-              Get.find<CartController>().removeAllCartItem();
-              checkRebookAvailability(bookingId);
               Get.back();
+              await Get.find<CartController>().removeAllCartItem();
+              await checkRebookAvailability(bookingId);
             },
           ));
-        }else {
-          await checkRebookAvailability(bookingId);
+          return;
         }
-      } else {
-        await checkRebookAvailability(bookingId);
       }
+      await checkRebookAvailability(bookingId);
+    } catch (_) {
+      customSnackBar('something_went_wrong'.tr, type: ToasterMessageType.error);
     }
+  }
 
   void updateRebookIndex (int index) {
     _rebookIndex = index;

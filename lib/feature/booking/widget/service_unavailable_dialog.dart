@@ -39,7 +39,7 @@ class ServiceUnavailableDialog extends StatelessWidget {
 
 
             ListView.builder(
-              itemCount: serviceBookingController.serviceAvailability!.content!.services!.length,
+              itemCount: serviceBookingController.serviceAvailability?.content?.services?.length ?? 0,
               shrinkWrap: true,
               itemBuilder: (context, index) {
                 return Padding( padding:  const EdgeInsets.symmetric(vertical: Dimensions.paddingSizeExtraSmall), child:
