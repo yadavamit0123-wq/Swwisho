@@ -51,39 +51,70 @@ class SubmitReviewController extends GetxController {
   }
 
 
-  Future<void> getReviewList(String bookingId)async{
+  Future<void> getReviewList(String bookingId, {BookingDetailsContent? bookingDetails}) async {
     _loading = true;
     update();
 
-    Response response =await submitReviewRepo.getReviewList(bookingId: bookingId);
-    if(response.statusCode == 200){
-
-      if( response.body['content'] !=null && response.body['content'].isNotEmpty){
-        List<dynamic> list = response.body['content'];
-        _serviceReviewList = [];
-        for (var element in list) {
-          _serviceReviewList!.add(Service.fromJson(element));
-        }
-        _serviceReviewList?.forEach((element){
-
-          textControllers[element.id!] = TextEditingController();
-
-          if(element.review != null && element.review!.isNotEmpty){
-            selectedRating[element.id!] = element.review!.first.reviewRating ?? 5;
-            isEditable[element.id!] = element.review!.isEmpty;
-            reviewComments[element.id!] = element.review!.first.reviewComment ?? "";
-            textControllers[element.id]!.text = element.review!.first.reviewComment ?? "";
-          }else{
-            selectedRating[element.id!] = 5;
-            isEditable[element.id!] = true;
-            reviewComments[element.id!] =  "";
-            textControllers[element.id]!.text = "";
+    try {
+      Response response = await submitReviewRepo.getReviewList(bookingId: bookingId);
+      if (response.statusCode == 200 && response.body is Map) {
+        final content = response.body['content'];
+        if (content is List && content.isNotEmpty) {
+          _serviceReviewList = [];
+          for (final element in content) {
+            try {
+              if (element is Map) {
+                _serviceReviewList!.add(Service.fromJson(Map<String, dynamic>.from(element)));
+              }
+            } catch (_) {}
           }
-        });
+        }
       }
+    } catch (_) {}
+
+    if (_serviceReviewList == null || _serviceReviewList!.isEmpty) {
+      _populateFromBookingDetails(bookingDetails);
+    } else {
+      _initializeReviewFields();
     }
+
     _loading = false;
     update();
+  }
+
+  void _populateFromBookingDetails(BookingDetailsContent? bookingDetails) {
+    _serviceReviewList = [];
+    for (final item in bookingDetails?.bookingDetails ?? <ItemService>[]) {
+      if (item.service != null) {
+        _serviceReviewList!.add(item.service!);
+      } else if (item.serviceId != null && item.serviceId!.isNotEmpty) {
+        _serviceReviewList!.add(Service(id: item.serviceId, name: item.serviceName));
+      }
+    }
+    _initializeReviewFields();
+  }
+
+  void _initializeReviewFields() {
+    for (final element in _serviceReviewList ?? <Service>[]) {
+      final serviceId = element.id;
+      if (serviceId == null || serviceId.isEmpty) {
+        continue;
+      }
+
+      textControllers[serviceId] = TextEditingController();
+
+      if (element.review != null && element.review!.isNotEmpty) {
+        selectedRating[serviceId] = element.review!.first.reviewRating ?? 5;
+        isEditable[serviceId] = element.review!.isEmpty;
+        reviewComments[serviceId] = element.review!.first.reviewComment ?? "";
+        textControllers[serviceId]!.text = element.review!.first.reviewComment ?? "";
+      } else {
+        selectedRating[serviceId] = 5;
+        isEditable[serviceId] = true;
+        reviewComments[serviceId] = "";
+        textControllers[serviceId]!.text = "";
+      }
+    }
   }
 
   void updateEditableValue(String serviceId,bool value,{bool isUpdate= false}){

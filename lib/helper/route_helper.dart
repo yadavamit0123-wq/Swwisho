@@ -174,11 +174,12 @@ class RouteHelper {
 
   static Future<void> openRateReviewScreen(BuildContext context, {required String bookingId}) async {
     try {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        navigator.pop();
       }
     } catch (_) {}
-    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     return toRateReviewScreen(bookingId);
   }
 

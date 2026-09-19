@@ -15,10 +15,15 @@ class RateReviewScreen extends StatefulWidget{
 class _RateReviewScreenState extends State<RateReviewScreen> {
 
   _loadData() async {
-   if(widget.id !=null){
-     Get.find<BookingDetailsController>().getBookingDetails(bookingId: widget.id!);
-     await Get.find<SubmitReviewController>().getReviewList(widget.id!);
-   }
+    if (widget.id == null) {
+      return;
+    }
+    await Get.find<BookingDetailsController>().getBookingDetails(bookingId: widget.id!);
+    final bookingDetails = Get.find<BookingDetailsController>().bookingDetailsContent;
+    await Get.find<SubmitReviewController>().getReviewList(
+      widget.id!,
+      bookingDetails: bookingDetails,
+    );
   }
 
   @override
@@ -42,10 +47,12 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
                || submitReviewController.serviceReviewList!.isEmpty){
              return const NoDataScreen(text: "no_data_found", type: NoDataType.bookings,);
            }else{
-             return FooterBaseView(
+             return SafeArea(
+               child: Center(
                child: SizedBox(
                  width: Dimensions.webMaxWidth,
                  child: SingleChildScrollView(
+                   padding: const EdgeInsets.only(bottom: Dimensions.paddingSizeLarge),
                    child: Column(
                      children: [
                        Stack(children: [
@@ -102,6 +109,7 @@ class _RateReviewScreenState extends State<RateReviewScreen> {
                    ),
                  ),
                ),
+             ),
              );
            }
          }

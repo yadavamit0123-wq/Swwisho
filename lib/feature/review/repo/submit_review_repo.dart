@@ -11,6 +11,10 @@ class SubmitReviewRepo{
     return await apiClient.postData(AppConstants.serviceReview, reviewBody.toJson());
   }
   Future<Response> getReviewList({required String bookingId}) async {
-    return await apiClient.getData('${AppConstants.bookingReviewList}?booking_id=$bookingId');
+    final guestId = Get.find<SplashController>().getGuestId();
+    final guestQuery = guestId.isNotEmpty ? '&guest_id=$guestId' : '';
+    return await apiClient.getData(
+      '${AppConstants.bookingReviewList}?booking_id=$bookingId$guestQuery',
+    );
   }
 }
